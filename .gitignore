@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dev-dist
+coverage
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment and local overrides
+.env*
+*.local
+
+# Vercel
+.vercel
+
+# Editors / OS
+.idea
+.DS_Store
+Thumbs.db

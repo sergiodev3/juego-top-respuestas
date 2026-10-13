@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply min-h-dvh bg-slate-50 text-slate-900 antialiased;
+  }
+
+  /* Always-visible keyboard focus ring (accessibility requirement). */
+  :focus-visible {
+    outline: 3px solid var(--color-amber-500);
+    outline-offset: 3px;
+  }
+}

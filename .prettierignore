@@ -1,0 +1,9 @@
+node_modules
+dist
+dev-dist
+coverage
+package-lock.json
+
+# Human-authored planning documents keep their own formatting.
+docs
+odd
