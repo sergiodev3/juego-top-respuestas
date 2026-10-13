@@ -23,7 +23,7 @@ Bootstrap the "Top Respuestas" app: tooling, folder structure, Tailwind, basic P
 
 - [x] T0.1 Scaffold + tooling + structure + Tailwind + router placeholders + PWA + CLAUDE.md (route: delegated — writer trigger, 10+ non-trivial files)
 - [x] T0.2 Verify: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build` (PWA service worker generated)
-- [ ] T0.3 Work-unit commit + RDD assessment
+- [x] T0.3 Work-unit commit + RDD assessment
 
 ## Acceptance criteria
 
@@ -43,6 +43,13 @@ Scaffold has no meaningful RED; checks are a smoke test plus typecheck/lint/buil
 - Resolved versions: vite 8.3.4, react 19.3.0, react-router 7.18.4, tailwindcss 4.3.3, vite-plugin-pwa 2.0.0, vitest 5.0.4, eslint 10.12.0, typescript 6.0.3.
 - Version holds: TypeScript ~6.0 (typescript-eslint peer `<6.1`); react-router 7 (v8 needs Node >=22.22, machine has 22.18).
 
+- T0.3 commit: `af606b2` (45 files). RDD assess (base c250e22, untracked `.atl/` excluded): risk medium, `review_due: slice_budget_reached`; START returned consent envelope — user granted. Lens review-reliability → approved; acknowledged (lineage review-9ef7a7c5096a8521, authority burned). Reviewed boundary advances to `af606b2`.
+
+## Follow-ups (advisory, non-blocking)
+
+- R3-error-boundary-nested-routes: add render tests for 404/error boundary and `/tablero` outside layout (when component tests arrive, Fase 4).
+- R3-vercel-rewrite-all: restrict rewrite to extensionless paths so missing assets 404 instead of returning HTML (Fase 7 deploy).
+
 ## Next step
 
-T0.3 commit + RDD assessment, then user approval before Fase 1.
+User approval before Fase 1 (Dexie data model + question bank CRUD + sample data).
