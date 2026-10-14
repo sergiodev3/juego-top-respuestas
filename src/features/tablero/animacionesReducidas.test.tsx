@@ -94,4 +94,16 @@ describe('board with prefers-reduced-motion: reduce', () => {
     });
     expect(screen.queryByRole('img', { name: /tacha/ })).not.toBeInTheDocument();
   });
+
+  it('still shows the single face-off miss X, without motion', () => {
+    const { rerender } = render(<PantallaTablero estado={partida([])} />);
+
+    rerender(
+      <PantallaTablero
+        estado={partida([{ tipo: 'ASIGNAR_TURNO', equipo: 0 }, { tipo: 'TACHE' }])}
+      />,
+    );
+    const aviso = screen.getByRole('img', { name: '1 tacha' });
+    expect(within(aviso).getAllByText('X')).toHaveLength(1);
+  });
 });

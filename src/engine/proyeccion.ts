@@ -40,6 +40,12 @@ export interface VistaRonda {
   readonly equipoControl: number | null;
   readonly equipoRobo: number | null;
   readonly ganadorCaraACara: number | null;
+  /**
+   * Face-off misses so far this round (never round strikes). Kept after the face-off ends so
+   * undoing back into it does not raise it; a new round starts at 0. Only a count: no team, no
+   * answer data.
+   */
+  readonly fallosCaraACara: number;
   readonly ganadorRonda: number | null;
   readonly puntosOtorgados: number | null;
 }
@@ -103,6 +109,7 @@ function proyectarRonda(config: ConfigPartida, ronda: EstadoRonda): VistaRonda {
     equipoControl: ronda.equipoControl,
     equipoRobo: ronda.equipoRobo,
     ganadorCaraACara: ronda.caraACara.ganador,
+    fallosCaraACara: ronda.caraACara.intentos.filter((intento) => intento.indice === null).length,
     ganadorRonda: ronda.ganador,
     puntosOtorgados: ronda.puntosOtorgados,
   };

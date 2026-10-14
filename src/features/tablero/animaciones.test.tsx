@@ -221,6 +221,41 @@ describe('strike overlay', () => {
     expect(screen.getByLabelText('Tachas: 2 de 3')).toBeInTheDocument();
   });
 
+  it('shows a single big X for each face-off miss without counting it as a strike', () => {
+    const fallo = (equipo: number): Evento[] => [
+      { tipo: 'ASIGNAR_TURNO', equipo },
+      { tipo: 'TACHE' },
+    ];
+    const tablero = montar([]);
+
+    tablero.actualizar(fallo(0));
+    const primera = screen.getByRole('img', { name: '1 tacha' });
+    expect(within(primera).getAllByText('X')).toHaveLength(1);
+    expect(screen.getByLabelText('Tachas: 0 de 3')).toBeInTheDocument();
+
+    avanzar(1500);
+    expect(screen.queryByRole('img', { name: /tacha/ })).not.toBeInTheDocument();
+
+    tablero.actualizar([...fallo(0), ...fallo(1)]);
+    const segunda = screen.getByRole('img', { name: '1 tacha' });
+    expect(within(segunda).getAllByText('X')).toHaveLength(1);
+    expect(screen.getByLabelText('Tachas: 0 de 3')).toBeInTheDocument();
+  });
+
+  it('does not replay face-off misses on mount nor show them when one is undone', () => {
+    const fallos: Evento[] = [
+      { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+      { tipo: 'TACHE' },
+      { tipo: 'ASIGNAR_TURNO', equipo: 1 },
+      { tipo: 'TACHE' },
+    ];
+    const tablero = montar(fallos);
+    expect(screen.queryByRole('img', { name: /tacha/ })).not.toBeInTheDocument();
+
+    tablero.actualizar(fallos.slice(0, -1));
+    expect(screen.queryByRole('img', { name: /tacha/ })).not.toBeInTheDocument();
+  });
+
   it('does not show the overlay when a strike is undone', () => {
     const tablero = montar([...EN_JUEGO, { tipo: 'TACHE' }, { tipo: 'TACHE' }]);
 

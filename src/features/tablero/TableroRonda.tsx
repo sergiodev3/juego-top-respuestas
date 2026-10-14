@@ -113,6 +113,8 @@ export function TableroRonda({ vista, ronda }: TableroRondaProps) {
       <div className="flex flex-wrap items-center justify-center gap-10">
         <Tachas tachas={ronda.tachas} maximas={ronda.tachasMaximas} />
         <SobreposicionTachas tachas={ronda.tachas} maximas={ronda.tachasMaximas} />
+        {/* A face-off miss is not a strike: it flashes a single X, like on TV. */}
+        <SobreposicionTachas tachas={ronda.fallosCaraACara} maximas={1} />
         <p className="text-4xl font-bold text-amber-300 md:text-5xl">
           <span className="sr-only">{`Puntos en juego: ${String(ronda.bolsa)}`}</span>
           <span aria-hidden="true">

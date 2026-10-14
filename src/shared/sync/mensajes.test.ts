@@ -51,6 +51,25 @@ describe('esquemaVistaTablero', () => {
     expect(esquemaVistaTablero.parse(VISTA_RONDA_FINAL)).toEqual(VISTA_RONDA_FINAL);
   });
 
+  it('requires the face-off miss count as a non-negative integer', () => {
+    const config = configPrueba();
+    const vista = proyectarTablero(
+      config,
+      reducir(config, [{ tipo: 'ASIGNAR_TURNO', equipo: 0 }, { tipo: 'TACHE' }]),
+    );
+    expect(esquemaVistaTablero.parse(vista).ronda?.fallosCaraACara).toBe(1);
+
+    const ronda = vista.ronda ?? expect.unreachable();
+    const invalidas = [
+      { ...ronda, fallosCaraACara: undefined },
+      { ...ronda, fallosCaraACara: -1 },
+      { ...ronda, fallosCaraACara: 1.5 },
+    ];
+    for (const invalida of invalidas) {
+      expect(esquemaVistaTablero.safeParse({ ...vista, ronda: invalida }).success).toBe(false);
+    }
+  });
+
   it('drops keys the projection does not define', () => {
     const conExtra = { ...VISTA_RONDA_FINAL, respuestasOcultas: ['SECRETO'] };
 

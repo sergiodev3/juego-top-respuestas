@@ -17,10 +17,11 @@ No React, React DOM, Dexie, or imports from `@/features`, `@/app`, or `@/db` (en
 | `esquemaConfigPartida`             | Zod schema for the shape of a stored config snapshot (rules stay in `validarConfig`).       |
 | `esquemaEvento`                    | Zod discriminated union for the shape of every stored event, tied to the `Evento` type.     |
 | `deshacer(eventos)`                | The log without its last event (undo).                                                      |
-| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers. |
-| Types                              | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ...  |
+| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers. |     | Types | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ... |
 
 Teams are addressed by index (0-3, keys A-D). `ConfigPartida` is a snapshot (teams, rounds with their questions and multipliers, strike limit, optional final round), so replay never depends on the question bank. Answers in a `PreguntaSnapshot` are sorted by points, desc.
+
+The board's round view carries `fallosCaraACara`, the number of face-off misses this round (separate from `tachas`). It is only a count, stays after the face-off ends (so undoing back into it never raises it) and restarts at 0 each round; the board shows one big X each time it goes up.
 
 ## Phases
 

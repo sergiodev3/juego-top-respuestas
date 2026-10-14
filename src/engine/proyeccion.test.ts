@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { aplicar, crearEstadoInicial, proyectarTablero, reducir } from './index';
+import { aplicar, crearEstadoInicial, deshacer, proyectarTablero, reducir } from './index';
 import type { ConfigPartida, EstadoJuego, Evento } from './index';
 import { caraACaraGanado, crearConfig, jugar, tachas } from './prueba/fabricas';
 import {
@@ -76,6 +76,7 @@ describe('proyectarTablero: regular rounds', () => {
         equipoControl: null,
         equipoRobo: null,
         ganadorCaraACara: null,
+        fallosCaraACara: 0,
         ganadorRonda: null,
         puntosOtorgados: null,
       },
@@ -129,6 +130,66 @@ describe('proyectarTablero: regular rounds', () => {
     expect(serializado).not.toContain('SIN_');
     expect(serializado).not.toContain('R2');
     expect(serializado).not.toContain('advertencias');
+  });
+});
+
+describe('proyectarTablero: face-off misses', () => {
+  const config = crearConfig();
+  const fallo = (equipo: number): Evento[] => [
+    { tipo: 'ASIGNAR_TURNO', equipo },
+    { tipo: 'TACHE' },
+  ];
+  const dosFallos: Evento[] = [...fallo(0), ...fallo(1)];
+  const fallosTras = (eventos: Evento[]) =>
+    proyectarTablero(config, jugar(config, eventos)).ronda?.fallosCaraACara;
+
+  it('counts each face-off miss without touching the round strikes', () => {
+    expect(fallosTras(fallo(0))).toBe(1);
+    const vista = proyectarTablero(config, jugar(config, dosFallos));
+    expect(vista.ronda).toMatchObject({ fallosCaraACara: 2, tachas: 0 });
+  });
+
+  it('does not count a face-off hit', () => {
+    expect(
+      fallosTras([
+        ...dosFallos,
+        { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+        { tipo: 'REVELAR', indice: 1 },
+      ]),
+    ).toBe(2);
+    expect(fallosTras(caraACaraGanado(0))).toBe(0);
+  });
+
+  it('keeps the count for the rest of the round, so undoing back into the face-off never raises it', () => {
+    const resuelto: Evento[] = [...fallo(0), ...caraACaraGanado(1)];
+    expect(fallosTras(resuelto)).toBe(1);
+    expect(fallosTras([...resuelto, { tipo: 'JUGAR' }, { tipo: 'TACHE' }])).toBe(1);
+  });
+
+  it('goes down when a miss is undone', () => {
+    expect(fallosTras(deshacer(dosFallos))).toBe(1);
+  });
+
+  it('starts again at zero in the next round', () => {
+    const rondaGanada: Evento[] = [
+      ...fallo(1),
+      ...caraACaraGanado(0),
+      { tipo: 'JUGAR' },
+      ...[1, 2, 3, 4].map((indice): Evento => ({ tipo: 'REVELAR', indice })),
+    ];
+    expect(fallosTras(rondaGanada)).toBe(1);
+    const siguiente = proyectarTablero(
+      config,
+      jugar(config, [...rondaGanada, { tipo: 'SIGUIENTE_RONDA' }]),
+    );
+    expect(siguiente.ronda).toMatchObject({ numero: 2, fallosCaraACara: 0 });
+  });
+
+  it('carries only the count, never which team missed or any answer data', () => {
+    const vista = proyectarTablero(config, jugar(config, dosFallos));
+    expect(vista.ronda?.respuestas.every(({ revelada }) => !revelada)).toBe(true);
+    expect(JSON.stringify(vista)).not.toContain('intentos');
+    verificarSinFugas(config, jugar(config, dosFallos));
   });
 });
 

@@ -30,6 +30,7 @@ Fase 4 is fully playable but mouse-only, silent and static. The SPEC (sections 5
 - [x] T5.3 Board animations: answer flip on reveal, big red X overlay on tache (1 / 2 / 3 X), score count-up when points are awarded, final-round reveals; reduced-motion fallback (route: delegated writer; test-first where deterministic — what is rendered after the animation, reduced-motion path)
 - [ ] T5.4 Projector polish: very large type and high contrast tuned for a projector (clamp-based sizes), waiting screen with the game name (keep last known name after `SIN_PARTIDA`), round title card (game name, "Ronda N", multiplier) at round start, hide the cursor after 3 s of inactivity on the board (route: delegated writer; test-first for the cursor timer and waiting screen)
 - [ ] T5.5 Fase 4 follow-ups: engine `motivo` strings in "usted"; export `PREGUNTAS_RONDA_FINAL` from `@/engine` and remove the duplicate in `shared/modelo`; Inicio "Continuar partida" shows a neutral loading state instead of the disabled card (route: delegated writer or inline depending on size; tests updated)
+- [x] T5.7 Face-off miss X (added by user decision after T5.3): expose face-off misses in the projection (`proyectarTablero`) and the sync schema (`esquemaVistaTablero`, both-ways type test), and show one big red X on the board for each face-off miss without touching the 3-strike count (route: delegated writer — engine + sync + board; test-first, engine coverage gate)
 - [ ] T5.6 Verify (typecheck, lint, format:check, test, build), work-unit commits per task, RDD per commit range, update CLAUDE.md (Fase 5 section)
 
 ## Acceptance criteria
@@ -65,6 +66,11 @@ Runner: Vitest. Pure pieces (event→sound mapping, mute store, shortcut→actio
   - Flake: `VistaPanelRondaFinal.test.tsx` takes ~4 s alone with or without T5.3 (measured) but exceeds the 15 s `testTimeout` under full-suite load (12 workers); now fails most full runs → fix in T5.6. `PanelImportacion.test.tsx` flakes the same way.
   - Open: a face-off (cara a cara) miss is not in the projection (`caraACara.intentos` stays engine-side), so the board shows no X for it → product question to the user. Main chunk 841 kB with `motion` (board route not lazy) → T5.4/T5.6.
 
+- T5.3 commit `120482f`; RDD medium (13 files / 663 lines); user granted; review-reliability approved with no advisories; acknowledged (lineage review-cd1c2a39618918a9). Last reviewed commit: `120482f`.
+- User decision (2026-10-14): a face-off miss shows one big X on the board, as on TV → new task T5.7 (engine projection + sync schema + board).
+
+- T5.7 (delegated writer): `VistaRonda.fallosCaraACara` = face-off attempts without an answer in the current round (a count only; kept for the whole round and reset at the next round, so undoing JUGAR never raises it and fakes an X); required in `esquemaVistaTablero`; `TableroRonda` reuses `SobreposicionTachas` with `maximas={1}` when the count rises while mounted. RED → GREEN: engine 6 failed first → 16/16 (the no-leak test passed early); sync 2 failed → green; board "one X per face-off miss" failed → green; reduced-motion test added after the code. Writer: typecheck, lint, format clean; coverage engine lines 98.75 / statements 98.78 / functions 100 / branches 93.77; test 58 files / 582. Parent spot check: engine + sync + board 20 files / 311 passed, lint 0. ~150 authored lines.
+
 ## Next step
 
-Commit T5.3, RDD, then T5.4 projector polish.
+Commit T5.7, RDD, then T5.4 projector polish (delegated writer).
