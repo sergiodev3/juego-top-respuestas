@@ -67,6 +67,7 @@ export function PanelPartida({
   const temporizador = useTemporizador(
     jugador === 1 ? segundos[0] : segundos[1],
     relojTemporizador,
+    jugador,
   );
   const enRondaFinal = estado.fase === 'rondaFinal';
   const { restante, total, corriendo } = temporizador.temporizador;

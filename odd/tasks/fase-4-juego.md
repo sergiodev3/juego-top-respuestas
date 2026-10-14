@@ -66,6 +66,9 @@ Runner: Vitest. Pure pieces (config builder, sync schemas/protocol logic, presen
   - Known: engine `motivo` strings use "tú" while panel copy uses "usted" — harmonize in Fase 5 polish (engine change).
   - Manual test script (from writer) recorded in the phase summary to the user.
 
+- T4.3 commit `c5bb0b3`; RDD medium (30 files / 3096 lines); user granted; review-reliability approved; acknowledged (lineage review-b88c67986b4de9e4). Advisory (W, real bug): timer did not reset on player change when both players have the same seconds → fixed inline (route: inline — 2 small files, already understood): `useTemporizador(total, reloj, clave)` resets on `clave` (player) change. RED: 1 of 2 new tests failed (15 s left instead of 20) → GREEN; full suite 50 files / 514 passed; lint, typecheck, format clean.
+- [x] T4.4 Verify + commits + RDD per work unit.
+
 ## Next step
 
-Commit T4.3 + RDD, then user manual test and approval before Fase 5.
+User manual test and approval before Fase 5.

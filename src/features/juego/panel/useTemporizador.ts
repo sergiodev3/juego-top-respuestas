@@ -24,14 +24,16 @@ const INTERVALO_MS = 200;
 interface EstadoTemporizador {
   /** Seconds this countdown started from; a new value resets it. */
   totalSegundos: number;
+  /** Identifies whose countdown this is (the player); a new value resets it. */
+  clave: number | string;
   /** Milliseconds left when it was last started or paused. */
   restanteMs: number;
   /** Clock time of the last start, or `null` while paused. */
   inicio: number | null;
 }
 
-function estadoInicial(totalSegundos: number): EstadoTemporizador {
-  return { totalSegundos, restanteMs: totalSegundos * 1000, inicio: null };
+function estadoInicial(totalSegundos: number, clave: number | string): EstadoTemporizador {
+  return { totalSegundos, clave, restanteMs: totalSegundos * 1000, inicio: null };
 }
 
 export interface ControlTemporizador {
@@ -44,17 +46,19 @@ export interface ControlTemporizador {
 
 /**
  * UI-only countdown for the final round (the engine stores nothing time-based). Changing
- * `totalSegundos` (for example when player 2 starts) resets it, stopped.
+ * `totalSegundos` or `clave` (the current player) resets it, stopped — even when both
+ * players have the same configured seconds.
  */
 export function useTemporizador(
   totalSegundos: number,
   reloj: RelojTemporizador = relojTemporizadorSistema,
+  clave: number | string = 0,
 ): ControlTemporizador {
-  const [estado, setEstado] = useState(() => estadoInicial(totalSegundos));
+  const [estado, setEstado] = useState(() => estadoInicial(totalSegundos, clave));
   const [ahora, setAhora] = useState(() => reloj.ahora());
 
-  if (estado.totalSegundos !== totalSegundos) {
-    setEstado(estadoInicial(totalSegundos));
+  if (estado.totalSegundos !== totalSegundos || estado.clave !== clave) {
+    setEstado(estadoInicial(totalSegundos, clave));
   }
 
   const { inicio, restanteMs } = estado;
@@ -100,7 +104,7 @@ export function useTemporizador(
       }));
     },
     reiniciar: () => {
-      setEstado(estadoInicial(totalSegundos));
+      setEstado(estadoInicial(totalSegundos, clave));
     },
   };
 }
