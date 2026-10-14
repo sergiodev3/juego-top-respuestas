@@ -72,6 +72,8 @@ Runner: Vitest (node env for domain, jsdom for UI). RED → GREEN for parsing/va
 
 - T2.4: RED 8 of 20 failing (cancel missing, focus, overlapping reads, busy stays disabled) → GREEN; writer: typecheck 0, lint 0, format clean, test 20 files / 133 passed, build OK. Parent spot check: 133 passed, lint 0. Decisions: drop zone hidden while a preview/file error is shown, "Cancelar" (disabled during import) and "Importar otro archivo" share one `reiniciar()`, focus returns to "Elegir archivo"; read counter ignores stale reads; "Importar y jugar" awaits navigation and resets busy in `finally`. R3-lectura-archivo-carrera and R3-importar-ocupado-sin-reset resolved.
 
+- T2.4 commit `7888312`; RDD medium (7 files / 499 lines), user granted, review-reliability approved, acknowledged (lineage review-788b6da494f66789). Advisory: (W) `reiniciar()` relies on unmounting to reset the file input — reset input value explicitly; (S) awaiting `navigate()` has no timeout — panel could stay busy if navigation never settles.
+
 ## Next step
 
-Commit T2.4 + RDD, then Fase 3 (game engine, pure TS, full tests) — already approved by the user.
+Fase 2 complete. Fase 3 (game engine) approved by the user.
