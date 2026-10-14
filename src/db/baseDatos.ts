@@ -1,18 +1,6 @@
 import { Dexie, type DexieOptions, type EntityTable, type Table } from 'dexie';
 
-import type { Pregunta, SetPreguntas } from '@/shared/modelo';
-
-/**
- * Saved game configuration. The full shape (teams, rules, rounds) arrives in Fase 4;
- * only the fields the schema indexes are typed for now.
- */
-export interface JuegoGuardado {
-  id: string;
-  nombre: string;
-  creadoEn: number;
-  actualizadoEn: number;
-  eliminadoEn: number | null;
-}
+import type { Juego, Pregunta, SetPreguntas } from '@/shared/modelo';
 
 /** Stored match (config snapshot + event log). Full shape arrives in Fase 4. */
 export interface PartidaGuardada {
@@ -41,7 +29,7 @@ export const NOMBRE_BASE_DATOS = 'top-respuestas';
 export class BaseDatosTopRespuestas extends Dexie {
   declare sets: EntityTable<SetPreguntas, 'id'>;
   declare preguntas: EntityTable<Pregunta, 'id'>;
-  declare juegos: EntityTable<JuegoGuardado, 'id'>;
+  declare juegos: EntityTable<Juego, 'id'>;
   declare partidas: EntityTable<PartidaGuardada, 'id'>;
   declare meta: Table<EntradaMeta, string>;
 

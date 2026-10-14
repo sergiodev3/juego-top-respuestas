@@ -1,4 +1,11 @@
-import type { DatosPregunta, DatosSet, Pregunta, SetPreguntas } from '@/shared/modelo';
+import type {
+  DatosJuego,
+  DatosPregunta,
+  DatosSet,
+  Juego,
+  Pregunta,
+  SetPreguntas,
+} from '@/shared/modelo';
 
 /**
  * Persistence ports. Features depend on these interfaces only, so the Dexie
@@ -45,9 +52,46 @@ export interface RepositorioPreguntas {
   duplicar(id: string): Promise<Pregunta>;
 }
 
+export interface RepositorioJuegos {
+  /** Non-deleted games, most recently updated first. */
+  listar(): Promise<Juego[]>;
+  obtener(id: string): Promise<Juego | undefined>;
+  crear(datos: DatosJuego): Promise<Juego>;
+}
+
+/** Where imported questions go: a set created on the fly or an existing one. */
+export type DestinoImportacion =
+  { tipo: 'nuevo'; datos: DatosSet } | { tipo: 'existente'; setId: string };
+
+export interface ResultadoImportacion {
+  set: SetPreguntas;
+  /** Created questions, in the same order they were given. */
+  preguntas: Pregunta[];
+}
+
+export interface ResultadoImportarYJugar extends ResultadoImportacion {
+  juego: Juego;
+}
+
+/** Bulk writes for the importer; each call is a single all-or-nothing transaction. */
+export interface ServicioImportacion {
+  /** Creates the set when it is new and inserts every question, keeping their order. */
+  importarPreguntas(
+    destino: DestinoImportacion,
+    preguntas: readonly DatosPregunta[],
+  ): Promise<ResultadoImportacion>;
+  /** Imports into a new set and creates a default game with its first questions as rounds. */
+  importarYJugar(
+    datosSet: DatosSet,
+    preguntas: readonly DatosPregunta[],
+  ): Promise<ResultadoImportarYJugar>;
+}
+
 export interface Repositorios {
   sets: RepositorioSets;
   preguntas: RepositorioPreguntas;
+  juegos: RepositorioJuegos;
+  importacion: ServicioImportacion;
 }
 
 /** Injected so implementations stay deterministic under test. */

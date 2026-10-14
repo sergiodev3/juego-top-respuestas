@@ -10,6 +10,7 @@ import {
 import { contieneTexto } from '@/shared/utils/normalizarTexto';
 
 import type { BaseDatosTopRespuestas } from './baseDatos';
+import { crearRepositorioJuegos } from './repositorioJuegosDexie';
 import {
   dependenciasPredeterminadas,
   ErrorRegistroNoEncontrado,
@@ -19,6 +20,7 @@ import {
   type Repositorios,
   type RepositorioSets,
 } from './repositorios';
+import { crearServicioImportacion } from './servicioImportacionDexie';
 
 const compararTexto = new Intl.Collator('es', { sensitivity: 'base', numeric: true }).compare;
 
@@ -255,5 +257,7 @@ export function crearRepositoriosDexie(
   return {
     sets: crearRepositorioSets(db, dependencias),
     preguntas: crearRepositorioPreguntas(db, dependencias),
+    juegos: crearRepositorioJuegos(db, dependencias),
+    importacion: crearServicioImportacion(db, dependencias),
   };
 }
