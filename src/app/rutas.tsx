@@ -1,6 +1,8 @@
 import type { RouteObject } from 'react-router';
 
 import { VistaBanco } from '@/features/banco/VistaBanco';
+import { VistaEditorPregunta } from '@/features/banco/VistaEditorPregunta';
+import { VistaSetBanco } from '@/features/banco/VistaSetBanco';
 import { VistaImportar } from '@/features/importar/VistaImportar';
 import { VistaImpresion } from '@/features/impresion/VistaImpresion';
 import { VistaConfigurarJuego } from '@/features/juego/VistaConfigurarJuego';
@@ -25,6 +27,9 @@ export const rutas: RouteObject[] = [
     children: [
       { index: true, element: <VistaInicio /> },
       { path: RUTAS.banco, element: <VistaBanco /> },
+      { path: RUTAS.bancoSet, element: <VistaSetBanco /> },
+      { path: RUTAS.bancoPreguntaNueva, element: <VistaEditorPregunta /> },
+      { path: RUTAS.bancoPregunta, element: <VistaEditorPregunta /> },
       { path: RUTAS.importar, element: <VistaImportar /> },
       { path: RUTAS.configurarJuego, element: <VistaConfigurarJuego /> },
       { path: RUTAS.panel, element: <VistaPanel /> },

@@ -1,3 +1,5 @@
+import { generatePath } from 'react-router';
+
 /**
  * Single source of truth for application paths.
  * Shared so features can link to each other without importing from `src/app`.
@@ -5,6 +7,9 @@
 export const RUTAS = {
   inicio: '/',
   banco: '/banco',
+  bancoSet: '/banco/:setId',
+  bancoPreguntaNueva: '/banco/:setId/preguntas/nueva',
+  bancoPregunta: '/banco/:setId/preguntas/:preguntaId',
   importar: '/importar',
   configurarJuego: '/juego/configurar',
   panel: '/juego/panel',
@@ -14,3 +19,18 @@ export const RUTAS = {
 } as const;
 
 export type Ruta = (typeof RUTAS)[keyof typeof RUTAS];
+
+/** `/banco/:setId` */
+export function rutaSetBanco(setId: string): string {
+  return generatePath(RUTAS.bancoSet, { setId });
+}
+
+/** `/banco/:setId/preguntas/nueva` */
+export function rutaPreguntaNueva(setId: string): string {
+  return generatePath(RUTAS.bancoPreguntaNueva, { setId });
+}
+
+/** `/banco/:setId/preguntas/:preguntaId` */
+export function rutaEditarPregunta(setId: string, preguntaId: string): string {
+  return generatePath(RUTAS.bancoPregunta, { setId, preguntaId });
+}
