@@ -1,4 +1,5 @@
 import { crearEstadoInicial } from './estadoInicial';
+import { esquemaEvento } from './esquemas';
 import {
   aceptar,
   esIndiceEquipo,
@@ -107,18 +108,32 @@ export function aplicar(config: ConfigPartida, estado: EstadoJuego, evento: Even
 }
 
 /**
- * Replays a stored log from the initial state. Invalid events are skipped and listed in
- * `advertencias` (with their log index) instead of throwing, so a partida can always be recovered.
+ * Replays raw stored events. Each one is checked against `esquemaEvento` first (a malformed
+ * shape is reported as `EVENTO_MALFORMADO`), then against the rules. Expects a valid config.
  */
-export function reducir(config: ConfigPartida, eventos: readonly Evento[]): EstadoJuego {
-  return eventos.reduce<EstadoJuego>((estado, evento, indice) => {
-    const resultado = procesar(config, estado, evento);
+export function reproducir(config: ConfigPartida, eventos: readonly unknown[]): EstadoJuego {
+  return eventos.reduce<EstadoJuego>((estado, crudo, indice) => {
+    const evento = esquemaEvento.safeParse(crudo);
+    const resultado = evento.success
+      ? procesar(config, estado, evento.data)
+      : rechazar('EVENTO_MALFORMADO');
     if (resultado.ok) {
       return resultado.estado;
     }
     const { codigo, motivo } = resultado;
     return { ...estado, advertencias: [...estado.advertencias, { indice, codigo, motivo }] };
   }, crearEstadoInicial(config));
+}
+
+/**
+ * Replays a stored log from the initial state. Malformed or invalid events are skipped and listed
+ * in `advertencias` (with their log index) instead of throwing.
+ *
+ * `config` must already be valid: like `crearEstadoInicial`, this throws for a config that
+ * `validarConfig` rejects. Data read from storage goes through `reconstruir`, which never throws.
+ */
+export function reducir(config: ConfigPartida, eventos: readonly Evento[]): EstadoJuego {
+  return reproducir(config, eventos);
 }
 
 /** Undo: the log without its last event. Replay it with `reducir` to get the previous state. */

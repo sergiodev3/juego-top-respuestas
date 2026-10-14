@@ -53,7 +53,7 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - **Board sync**: the panel is the single source of truth. The board receives only a projection (`proyectarTablero`) over BroadcastChannel, with Zod-validated messages.
 - **3-4 teams**: all teams play every round; the host assigns with keys A-D whoever buzzed first in cara a cara and in robo.
 - **Scoring**: cara a cara strikes do not count toward the 3; a successful robo banks the stolen answer too; the round multiplier is applied when points are awarded.
-- **Final round**: adds the `RF_RESPUESTA` event; the timer lives in the UI, not the engine.
+- **Final round**: adds the `RF_RESPUESTA` event; the timer lives in the UI, not the engine. `RF_TERMINAR` adds the final-round total to the playing team's score; `TERMINAR_JUEGO` during the final round adds nothing.
 - **Import synonyms** (`R1: auto, coche; R3: celular`) are mapped to their answers before answers are sorted by points.
 - **Projector fullscreen** needs one click inside the board window (browser restriction). Window Management API (`getScreenDetails`) only on Chromium; fallback is `window.open` plus instructions.
 - **Dependencies arrive in the phase that first needs them** (Dexie and Zod since Fase 1; SheetJS and PapaParse since Fase 2; Zustand, Framer Motion, Howler later). SheetJS is installed from the official CDN tarball (`cdn.sheetjs.com`), never from the npm registry.
@@ -83,7 +83,7 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 
 - **Pure and event-sourced** (`src/engine`, import from `@/engine`): `reducir(config, eventos)` replays a log from `crearEstadoInicial(config)`; `validar` returns `{ ok: true } | { ok: false, codigo, motivo }` (stable code + Spanish message) for enabling panel actions; `aplicar` throws `EventoRechazadoError` on invalid events; `deshacer(eventos)` drops the last event; `proyectarTablero(config, estado)` is the only thing the board receives.
 - **Snapshot config**: `ConfigPartida` is engine-owned (teams by index 0-3, rounds with `PreguntaSnapshot` + multiplier, `tachasMaximas`, optional final round with exactly 5 questions). The engine never imports `@/shared/modelo`; Fase 4 maps `Juego` + questions into it.
-- **Replay never throws** on a bad stored event: it is skipped and listed in `estado.advertencias` (`{ indice, codigo, motivo }`).
+- **Replay never throws** on a bad stored event: it is checked against `esquemaEvento` (Zod) and the rules, then skipped and listed in `estado.advertencias` (`{ indice, codigo, motivo }`, `EVENTO_MALFORMADO` for a bad shape). `reducir` expects a valid config (it throws otherwise); data read from storage must go through `reconstruir(config: unknown, eventos: unknown)`, which never throws and returns `{ ok: true, config, estado, advertencias } | { ok: false, errores }`. Zod is allowed in the engine (pure library).
 - Rules source of truth: "Rules specification" in `odd/tasks/fase-3-motor.md`; overview, phase diagram and event table in `src/engine/README.md`. `npm run test:coverage` gates `src/engine/**` (lines/statements/functions >= 95%, branches >= 90%).
 
 ## Testing

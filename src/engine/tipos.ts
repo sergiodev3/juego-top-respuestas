@@ -88,6 +88,8 @@ export type Fase =
 /** Stable rejection codes; the UI may branch on them (e.g. buzzer on `RESPUESTA_REPETIDA`). */
 export type CodigoRechazo =
   | 'EVENTO_DESCONOCIDO'
+  /** A stored event whose shape does not match `esquemaEvento`; only reported by replay. */
+  | 'EVENTO_MALFORMADO'
   | 'JUEGO_TERMINADO'
   | 'FASE_INVALIDA'
   | 'EQUIPO_INVALIDO'
@@ -179,7 +181,10 @@ export interface EstadoRondaFinal {
   readonly jugadorActual: Jugador;
   readonly jugador1: RespuestasJugador;
   readonly jugador2: RespuestasJugador;
-  /** Set by `RF_TERMINAR`. A bonus result: it is never added to team scores. */
+  /**
+   * Set by `RF_TERMINAR`, which also adds `total` to the playing team's score. Stays `null` when
+   * `TERMINAR_JUEGO` ends the final round (nothing is added then).
+   */
   readonly resultado: ResultadoRondaFinal | null;
 }
 
@@ -194,3 +199,15 @@ export interface EstadoJuego {
   /** Events skipped by `reducir`. */
   readonly advertencias: readonly Advertencia[];
 }
+
+/** Result of `reconstruir`: a rebuilt partida, or Spanish messages explaining why it cannot be. */
+export type ResultadoReconstruccion =
+  | {
+      readonly ok: true;
+      /** The validated snapshot (unknown keys dropped); use it for every later engine call. */
+      readonly config: ConfigPartida;
+      readonly estado: EstadoJuego;
+      /** Same list as `estado.advertencias`: skipped events with their log index. */
+      readonly advertencias: readonly Advertencia[];
+    }
+  | { readonly ok: false; readonly errores: readonly string[] };

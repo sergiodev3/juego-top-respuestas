@@ -162,12 +162,16 @@ export function procesarRondaFinal(
       return aceptar({ ...estado, rondaFinal: { ...rondaFinal, jugadorActual: 2 } });
     }
     case 'RF_TERMINAR': {
-      // A bonus result only: final-round points are never added to team scores.
+      // The total of the revealed answers is added to the playing team's score.
       const total = totalRondaFinal(configRondaFinal, rondaFinal);
       const { meta } = configRondaFinal;
+      const puntajes = estado.puntajes.map((puntaje, equipo) =>
+        equipo === rondaFinal.equipo ? puntaje + total : puntaje,
+      );
       return aceptar({
         ...estado,
         fase: 'juegoTerminado',
+        puntajes,
         rondaFinal: { ...rondaFinal, resultado: { total, meta, superoMeta: total >= meta } },
       });
     }

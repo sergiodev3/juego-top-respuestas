@@ -103,7 +103,18 @@ Runner: Vitest (node env). RED → GREEN per rule group.
 
 - [x] T3.3 commit `a734ed1`; RDD medium (`slice_budget_reached`, 32 files / 3345 lines); user granted; review-reliability approved; acknowledged (lineage review-002fdf8f8cb2a45f). Reviewed boundary → `a734ed1`.
 
-## Follow-ups (advisory; propose folding into the start of Fase 4)
+- [x] T3.4 User decision + review warnings (route: delegated writer — 2+ non-trivial engine files; test-first):
+  - User decision (2026-10-14): final-round points ARE added to the playing team's score on `RF_TERMINAR` (supersedes "separate bonus, not added"). `TERMINAR_JUEGO` during the final round still ends with `resultado: null` and adds nothing.
+  - Safe rebuild entry point: `reconstruir(config: unknown, eventos: unknown)` → `{ ok: true, estado, advertencias } | { ok: false, errores: string[] }`; never throws. Config validated with a Zod schema + `validarConfig`; each stored event validated with a Zod event schema; malformed events are skipped into `advertencias` with code `EVENTO_MALFORMADO`. Zod is allowed in the engine (pure library).
+  - Tests for malformed shapes of every event type and invalid/missing config.
+
+  - Evidence: RED final-round scoring 6, schemas 63, corrupted-log 1, `reconstruir` 32 → GREEN. Writer: typecheck/lint/format clean, test 33 files / 389 passed, coverage 13 files / 256 passed, engine 98.78 / 93.77 / 100 / 98.75. Parent spot check: 389 passed, lint 0. New exports: `reconstruir`, `esquemaEvento`, `esquemaConfigPartida`, `ResultadoReconstruccion`, `EVENTO_MALFORMADO`. `reducir` now schema-checks stored events (malformed → `EVENTO_MALFORMADO`); `validar`/`aplicar` unchanged; unknown keys stripped for forward compatibility; schemas tied to TS types via `satisfies` + `expectTypeOf`.
+
+## User confirmation (2026-10-14)
+
+- Ran tests: 293 passed; coverage run shows 160 (engine-only by design since `test:coverage` is scoped to `src/engine`).
+
+## Follow-ups (advisory; folded into T3.4)
 
 - (W) `reducir` calls `crearEstadoInicial`, which throws on an invalid config — contradicts "replay never throws"; return a recoverable result (or validate the snapshot at load) and test it.
 - (W) Runtime event-shape guard only checks `tipo`; malformed fields of known events reach rule code. Validate stored events with a Zod schema at the persistence boundary (Fase 4 already needs Zod schemas for events/messages) and add replay tests for malformed shapes.

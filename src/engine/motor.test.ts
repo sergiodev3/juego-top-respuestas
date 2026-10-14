@@ -63,7 +63,7 @@ describe('reducir', () => {
     expect(estado.puntajes).toEqual([111, 205, 70]);
   });
 
-  it('never throws on a corrupted log', () => {
+  it('never throws on a corrupted log and skips malformed shapes before the rules', () => {
     const corrupto = congelar([
       null,
       { tipo: 'NO_EXISTE' },
@@ -72,15 +72,18 @@ describe('reducir', () => {
       { tipo: 'REVELAR', indice: '0' },
       { tipo: 'REVELAR', indice: 0 },
       { tipo: 'PASAR', equipo: null },
+      { tipo: 'AJUSTAR_PUNTOS', equipo: 1, delta: 0 },
     ]) as unknown as Evento[];
     const estado = reducir(config, corrupto);
     expect(estado.advertencias.map(({ indice, codigo }) => [indice, codigo])).toEqual([
-      [0, 'EVENTO_DESCONOCIDO'],
-      [1, 'EVENTO_DESCONOCIDO'],
-      [2, 'EQUIPO_INVALIDO'],
-      [4, 'RESPUESTA_INVALIDA'],
-      [6, 'EQUIPO_INVALIDO'],
+      [0, 'EVENTO_MALFORMADO'],
+      [1, 'EVENTO_MALFORMADO'],
+      [2, 'EVENTO_MALFORMADO'],
+      [4, 'EVENTO_MALFORMADO'],
+      [6, 'EVENTO_MALFORMADO'],
+      [7, 'EVENTO_MALFORMADO'],
     ]);
+    expect(estado.advertencias[0]?.motivo).toBe('El evento guardado no tiene un formato válido.');
     expect(estado.ronda?.caraACara.ganador).toBe(0);
   });
 

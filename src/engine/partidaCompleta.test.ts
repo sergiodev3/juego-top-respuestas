@@ -50,20 +50,18 @@ describe('scenario: complete 2-team game', () => {
     expect(proyectarTablero(config, estado).rondaFinal?.jugadores[0]?.oculto).toBe(true);
   });
 
-  it('ends above the goal', () => {
+  it('ends above the goal and adds the final-round total to the playing team', () => {
     const estado = jugar(config, eventos);
     expect(estado.fase).toBe('juegoTerminado');
     expect(estado.rondaFinal?.resultado).toEqual({ total: 260, meta: 200, superoMeta: true });
-    expect(estado.puntajes).toEqual([392, 165]);
+    expect(estado.puntajes).toEqual([652, 165]);
   });
 
-  it('ends below a higher goal', () => {
+  it('ends below a higher goal and still adds the total', () => {
     const alta = partidaDosEquipos(300);
-    expect(jugar(alta.config, alta.eventos).rondaFinal?.resultado).toEqual({
-      total: 260,
-      meta: 300,
-      superoMeta: false,
-    });
+    const estado = jugar(alta.config, alta.eventos);
+    expect(estado.rondaFinal?.resultado).toEqual({ total: 260, meta: 300, superoMeta: false });
+    expect(estado.puntajes).toEqual([652, 165]);
   });
 
   it('undo by replay returns the exact previous state at every step', () => {

@@ -2,7 +2,9 @@
 export type * from './tipos';
 export { EventoRechazadoError } from './rechazos';
 export { crearEstadoInicial, validarConfig } from './estadoInicial';
+export { esquemaConfigPartida, esquemaEvento } from './esquemas';
 export { aplicar, deshacer, reducir, validar } from './motor';
+export { reconstruir } from './reconstruccion';
 export type {
   VistaEquipo,
   VistaJugadorRondaFinal,

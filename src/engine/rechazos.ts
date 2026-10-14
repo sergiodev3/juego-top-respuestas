@@ -2,6 +2,7 @@ import type { CodigoRechazo, ConfigPartida, EstadoJuego, Rechazo } from './tipos
 
 const MOTIVOS: Readonly<Record<CodigoRechazo, string>> = {
   EVENTO_DESCONOCIDO: 'No se reconoce esta acción.',
+  EVENTO_MALFORMADO: 'El evento guardado no tiene un formato válido.',
   JUEGO_TERMINADO: 'El juego ya terminó.',
   FASE_INVALIDA: 'Esta acción no está disponible en este momento del juego.',
   EQUIPO_INVALIDO: 'Elige un equipo válido.',

@@ -214,23 +214,37 @@ describe('ronda final: RF_TERMINAR', () => {
     revelar(2, 3),
   ];
 
-  it('sums only revealed answers and compares with the goal', () => {
+  it('sums only revealed answers, compares with the goal and adds the total to the team', () => {
     // Revealed: 50 + 5 + 0 (no match) + 30 + 15; player 1's unrevealed 30 does not count.
     const estado = jugar(config, [...jugada, { tipo: 'RF_TERMINAR' }]);
     expect(estado.fase).toBe('juegoTerminado');
     expect(estado.rondaFinal?.resultado).toEqual({ total: 100, meta: 100, superoMeta: true });
-    expect(estado.puntajes).toEqual([0, 40]);
+    // Team B played the final round with 40 points.
+    expect(estado.puntajes).toEqual([0, 140]);
   });
 
-  it('reports a total below the goal', () => {
+  it('adds the total even when it is below the goal', () => {
     const estado = jugar(config, [...jugada.slice(0, -1), { tipo: 'RF_TERMINAR' }]);
     expect(estado.rondaFinal?.resultado).toEqual({ total: 85, meta: 100, superoMeta: false });
+    expect(estado.puntajes).toEqual([0, 125]);
   });
 
-  it('TERMINAR_JUEGO ends the final round without a result', () => {
+  it('adds the total to the team assigned with ASIGNAR_TURNO', () => {
+    const estado = jugar(config, [
+      ...enRondaFinal,
+      { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+      respuesta(1, 0, 1),
+      revelar(1, 0),
+      { tipo: 'RF_TERMINAR' },
+    ]);
+    expect(estado.puntajes).toEqual([30, 40]);
+  });
+
+  it('TERMINAR_JUEGO ends the final round without a result and adds nothing', () => {
     const estado = jugar(config, [...jugada, { tipo: 'TERMINAR_JUEGO' }]);
     expect(estado.fase).toBe('juegoTerminado');
     expect(estado.rondaFinal?.resultado).toBeNull();
+    expect(estado.puntajes).toEqual([0, 40]);
   });
 });
 

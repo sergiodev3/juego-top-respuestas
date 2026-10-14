@@ -198,7 +198,7 @@ describe('proyectarTablero: final round', () => {
       puntos: 0,
     });
     expect(vista.rondaFinal?.resultado).toEqual({ total: 260, meta: 200, superoMeta: true });
-    expect(vista.equipos.map(({ puntaje }) => puntaje)).toEqual([392, 165]);
+    expect(vista.equipos.map(({ puntaje }) => puntaje)).toEqual([652, 165]);
   });
 
   it('is JSON-serializable', () => {
