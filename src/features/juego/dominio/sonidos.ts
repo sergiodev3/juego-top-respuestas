@@ -2,9 +2,11 @@ import type { ConfigPartida, EstadoJuego, Evento } from '@/engine';
 import type { NombreSonido } from '@/shared/sonido';
 
 /**
- * The sound for an event the host just saved, given the state after it (`null`: silence).
+ * The sound for an event the host just saved, given the states before and after it
+ * (`null`: silence).
  *
- * - `ganador` whenever the event ends the game (last round, `RF_TERMINAR`, `TERMINAR_JUEGO`).
+ * - `ganador` when the event moves the game into its end (last round, `RF_TERMINAR`,
+ *   `TERMINAR_JUEGO`); never again for a game that had already ended.
  * - `acierto` for an answer that scores: `REVELAR` (face-off or play), `ROBO_EXITOSO`, and a
  *   final-round reveal worth points.
  * - `tache` for a miss: `TACHE` (also a face-off miss), `ROBO_FALLIDO`, and a final-round reveal
@@ -18,10 +20,11 @@ import type { NombreSonido } from '@/shared/sonido';
 export function sonidoDeEvento(
   config: ConfigPartida,
   evento: Evento,
+  antes: EstadoJuego,
   despues: EstadoJuego,
 ): NombreSonido | null {
   if (despues.fase === 'juegoTerminado') {
-    return 'ganador';
+    return antes.fase === 'juegoTerminado' ? null : 'ganador';
   }
   switch (evento.tipo) {
     case 'REVELAR':

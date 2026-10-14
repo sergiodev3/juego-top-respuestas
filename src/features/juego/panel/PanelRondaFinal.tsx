@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import type {
   ConfigPartida,
@@ -8,6 +8,7 @@ import type {
   RespuestaRondaFinal,
   VistaRondaFinal,
 } from '@/engine';
+import { useSonidos } from '@/shared/sonido';
 import { CLASE_BOTON_SECUNDARIO, CLASE_CAMPO, CLASE_ETIQUETA } from '@/shared/ui/clases';
 
 import { nombreEquipo } from '../dominio';
@@ -96,22 +97,32 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
   const id = useId();
   const [texto, setTexto] = useState('');
   const [coincidencia, setCoincidencia] = useState(SIN_ELEGIR);
+  const { reproducir } = useSonidos();
   const rondaFinal = estado.rondaFinal;
+  const jugador = rondaFinal?.jugadorActual ?? 1;
+  const indiceElegido =
+    coincidencia === SIN_ELEGIR || coincidencia === SIN_COINCIDENCIA ? null : Number(coincidencia);
+  const responder = acciones.rfResponder(jugador, indice, indiceElegido, texto.trim());
+  const repetida = coincidencia !== SIN_ELEGIR && responder.codigo === 'RESPUESTA_REPETIDA';
+
+  useEffect(() => {
+    // TV-show buzzer when the host picks an answer the other player already gave (UI only: the
+    // engine rejects a repeat, so nothing is saved and no event sound plays).
+    if (repetida) {
+      reproducir('tache');
+    }
+  }, [repetida, reproducir]);
+
   if (rondaFinal === null) {
     return null;
   }
   const numero = indice + 1;
-  const jugador = rondaFinal.jugadorActual;
-  const indiceElegido =
-    coincidencia === SIN_ELEGIR || coincidencia === SIN_COINCIDENCIA ? null : Number(coincidencia);
-  const responder = acciones.rfResponder(jugador, indice, indiceElegido, texto.trim());
   const falta =
     texto.trim() === ''
       ? 'Escriba lo que respondió el jugador.'
       : coincidencia === SIN_ELEGIR
         ? 'Elija la respuesta que coincide o «Sin coincidencia».'
         : null;
-  const repetida = coincidencia !== SIN_ELEGIR && responder.codigo === 'RESPUESTA_REPETIDA';
   const registrar: AccionPanel = {
     ...responder,
     habilitada: responder.habilitada && falta === null,

@@ -14,13 +14,14 @@ interface EncabezadoPanelProps {
   onAbrirTablero: () => void;
   silenciado: boolean;
   onAlternarSilencio: () => void;
+  onAbrirAtajos: () => void;
   deshacer: AccionPanel;
   terminar: AccionPanel;
 }
 
 /**
- * Game name, round, multiplier, phase, board status, the mute switch and the always-present
- * actions.
+ * Game name, round, multiplier, phase, board status, the mute switch, the shortcut sheet and the
+ * always-present actions.
  */
 export function EncabezadoPanel({
   config,
@@ -30,6 +31,7 @@ export function EncabezadoPanel({
   onAbrirTablero,
   silenciado,
   onAlternarSilencio,
+  onAbrirAtajos,
   deshacer,
   terminar,
 }: EncabezadoPanelProps) {
@@ -84,6 +86,9 @@ export function EncabezadoPanel({
             onClick={onAlternarSilencio}
           >
             Silenciar sonido
+          </button>
+          <button type="button" className={CLASE_BOTON_SECUNDARIO} onClick={onAbrirAtajos}>
+            Atajos de teclado
           </button>
           <BotonAccion accion={deshacer}>Deshacer</BotonAccion>
           <BotonAccion accion={terminar} variante="peligro">

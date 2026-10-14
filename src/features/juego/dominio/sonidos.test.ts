@@ -18,9 +18,14 @@ const CONFIG: ConfigPartida = configPrueba({
   },
 });
 
-/** Sound for `evento` saved after `previos` (the state passed is the one after the event). */
+/** Sound for `evento` saved after `previos` (states before and after the event). */
 function sonidoTras(previos: readonly Evento[], evento: Evento) {
-  return sonidoDeEvento(CONFIG, evento, reducir(CONFIG, [...previos, evento]));
+  return sonidoDeEvento(
+    CONFIG,
+    evento,
+    reducir(CONFIG, previos),
+    reducir(CONFIG, [...previos, evento]),
+  );
 }
 
 const CARA_A_CARA_GANADO: Evento[] = [
@@ -78,8 +83,22 @@ describe('sonidoDeEvento', () => {
     const sinRondaFinal = configPrueba({ rondas: CONFIG.rondas });
     const eventos: Evento[] = [...FIN_DE_RONDA, { tipo: 'SIGUIENTE_RONDA' }];
     expect(
-      sonidoDeEvento(sinRondaFinal, { tipo: 'SIGUIENTE_RONDA' }, reducir(sinRondaFinal, eventos)),
+      sonidoDeEvento(
+        sinRondaFinal,
+        { tipo: 'SIGUIENTE_RONDA' },
+        reducir(sinRondaFinal, FIN_DE_RONDA),
+        reducir(sinRondaFinal, eventos),
+      ),
     ).toBe('ganador');
+  });
+
+  it('plays ganador only on the transition into the end of the game', () => {
+    const terminado = reducir(CONFIG, [...CARA_A_CARA_GANADO, { tipo: 'TERMINAR_JUEGO' }]);
+    expect(terminado.fase).toBe('juegoTerminado');
+    expect(sonidoDeEvento(CONFIG, { tipo: 'TERMINAR_JUEGO' }, terminado, terminado)).toBeNull();
+    expect(
+      sonidoDeEvento(CONFIG, { tipo: 'AJUSTAR_PUNTOS', equipo: 0, delta: 5 }, terminado, terminado),
+    ).toBeNull();
   });
 
   it('stays silent for turns, decisions, recorded final answers, adjustments and new rounds', () => {

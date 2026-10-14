@@ -156,8 +156,8 @@ export function usePartidaEnCurso(partidaId: string) {
       if (vigente.tipo !== 'lista') {
         return false;
       }
-      const { config } = vigente.partida;
-      const resultado = validar(config, vigente.partida.estado, evento);
+      const { config, estado: antes } = vigente.partida;
+      const resultado = validar(config, antes, evento);
       if (!resultado.ok) {
         setError(resultado.motivo);
         return false;
@@ -166,7 +166,7 @@ export function usePartidaEnCurso(partidaId: string) {
       if (estado === null) {
         return false;
       }
-      reproducir(sonidoDeEvento(config, evento, estado));
+      reproducir(sonidoDeEvento(config, evento, antes, estado));
       return true;
     },
     [escribir, partidas, reproducir],
