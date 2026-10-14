@@ -18,15 +18,17 @@ function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
   return (
     <section
       aria-labelledby={idTitulo}
-      className="flex flex-col gap-3 rounded-2xl border-4 border-blue-700 bg-blue-950 p-4"
+      className="flex min-h-0 flex-col gap-[clamp(0.3rem,1vh,0.75rem)] rounded-2xl border-4 border-blue-700 bg-blue-950 p-[clamp(0.5rem,1.5vh,1rem)]"
     >
-      <h3 id={idTitulo} className="text-center text-4xl font-bold text-amber-300">
+      <h3 id={idTitulo} className="text-center text-tablero-md font-bold text-amber-300">
         Jugador {jugador.jugador}
       </h3>
       {jugador.oculto ? (
-        <p className="py-8 text-center text-4xl font-semibold text-blue-300">Respuestas ocultas</p>
+        <p className="py-[1em] text-center text-tablero-md font-semibold text-blue-200">
+          Respuestas ocultas
+        </p>
       ) : (
-        <ol className="flex flex-col gap-3 perspective-distant">
+        <ol className="flex flex-col gap-[clamp(0.3rem,1vh,0.75rem)] perspective-distant">
           {jugador.respuestas.map((respuesta) => (
             <motion.li
               key={respuesta.numero}
@@ -35,7 +37,7 @@ function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
               animate={respuesta.revelada ? 'revelada' : 'oculta'}
               variants={VOLTEO}
               transition={{ duration: DURACION_VOLTEO_S, ease: 'easeOut' }}
-              className="flex min-h-16 items-center gap-4 rounded-lg bg-blue-900 px-4 text-4xl font-bold"
+              className="flex min-h-[1.6em] items-center gap-[0.5em] rounded-lg bg-blue-900 px-[0.5em] text-tablero-md leading-tight font-bold"
             >
               {respuesta.revelada && (
                 <>
@@ -56,24 +58,24 @@ export function TableroRondaFinal({ vista, rondaFinal, temporizador }: TableroRo
   const equipo = vista.equipos[rondaFinal.equipo]?.nombre ?? '';
   const segundos = temporizador === null ? null : Math.ceil(temporizador.restante);
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-center gap-8">
-        <h2 className="text-5xl font-extrabold md:text-6xl">Ronda final: {equipo}</h2>
+    <div className="flex min-h-0 flex-1 flex-col gap-[clamp(0.5rem,2vh,1.5rem)]">
+      <div className="flex flex-wrap items-center justify-center gap-[clamp(1rem,3vw,3rem)]">
+        <h2 className="text-tablero-lg font-extrabold">Ronda final: {equipo}</h2>
         {segundos !== null && (
           <p
             aria-label={`Tiempo restante: ${String(segundos)} segundos`}
-            className="flex size-28 items-center justify-center rounded-full border-8 border-amber-300 text-6xl font-black tabular-nums"
+            className="flex size-[1.8em] items-center justify-center rounded-full border-8 border-amber-300 text-tablero-xl leading-none font-black tabular-nums"
           >
             {segundos}
           </p>
         )}
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid min-h-0 grid-cols-2 gap-[clamp(0.75rem,2vw,1.5rem)]">
         {rondaFinal.jugadores.map((jugador) => (
           <ColumnaJugador key={jugador.jugador} jugador={jugador} />
         ))}
       </div>
-      <p className="text-center text-5xl font-extrabold text-amber-300 md:text-6xl">
+      <p className="text-center text-tablero-lg font-extrabold text-amber-300">
         <span className="sr-only">
           {`Total: ${String(rondaFinal.total)} de ${String(rondaFinal.meta)}`}
         </span>
@@ -83,7 +85,7 @@ export function TableroRondaFinal({ vista, rondaFinal, temporizador }: TableroRo
         </span>
       </p>
       {rondaFinal.resultado !== null && (
-        <p role="status" className="text-center text-5xl font-extrabold md:text-6xl">
+        <p role="status" className="text-center text-tablero-lg font-extrabold">
           {rondaFinal.resultado.superoMeta ? '¡Meta alcanzada!' : 'No alcanzaron la meta.'}
         </p>
       )}

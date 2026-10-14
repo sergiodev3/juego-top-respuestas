@@ -1,5 +1,19 @@
 @import 'tailwindcss';
 
+/*
+ * Projector board type scale (`text-tablero-*`). Each size follows the smaller of the viewport
+ * width and height, so a 4:3 1024x768 projector and a 16:9 1920x1080 one both fit the whole
+ * board without scrolling, and stays readable from the back of a classroom.
+ */
+@theme {
+  --text-tablero-xs: clamp(1rem, min(1.8vw, 3vh), 2rem);
+  --text-tablero-sm: clamp(1.25rem, min(2.4vw, 3.8vh), 2.75rem);
+  --text-tablero-md: clamp(1.4rem, min(3vw, 4.6vh), 3.5rem);
+  --text-tablero-lg: clamp(1.6rem, min(3.8vw, 6vh), 4.5rem);
+  --text-tablero-xl: clamp(2rem, min(5vw, 7.5vh), 6rem);
+  --text-tablero-2xl: clamp(3rem, min(9vw, 14vh), 11rem);
+}
+
 @layer base {
   html {
     color-scheme: light;

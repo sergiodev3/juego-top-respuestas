@@ -9,7 +9,6 @@ import { VistaConfigurarJuego } from '@/features/juego/VistaConfigurarJuego';
 import { VistaJuegoRapido } from '@/features/juego/VistaJuegoRapido';
 import { VistaPanel } from '@/features/juego/VistaPanel';
 import { VistaRespaldos } from '@/features/respaldos/VistaRespaldos';
-import { VistaTablero } from '@/features/tablero/VistaTablero';
 import { RUTAS } from '@/shared/rutas';
 
 import { Layout } from './Layout';
@@ -18,7 +17,9 @@ import { VistaInicio } from './VistaInicio';
 
 /**
  * Route table. The projector board (`/tablero`) is a top-level route so it renders
- * without the app shell; every other view lives under `Layout`.
+ * without the app shell; every other view lives under `Layout`. The board is lazy-loaded:
+ * it (and `motion`, which only the board uses) builds as its own chunk, still precached by
+ * the service worker for offline use.
  */
 export const rutas: RouteObject[] = [
   {
@@ -44,7 +45,12 @@ export const rutas: RouteObject[] = [
   },
   {
     path: RUTAS.tablero,
-    element: <VistaTablero />,
+    lazy: async () => {
+      const { VistaTablero } = await import('@/features/tablero/VistaTablero');
+      return { Component: VistaTablero };
+    },
+    // Dark while the board chunk loads, so the projector never flashes white.
+    hydrateFallbackElement: <div className="min-h-dvh bg-slate-950" />,
     errorElement: <VistaError />,
   },
 ];

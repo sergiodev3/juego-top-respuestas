@@ -76,6 +76,22 @@ describe('VistaTablero', () => {
     expect(screen.getByText('Esperando al conductor…')).toBeInTheDocument();
   });
 
+  it('keeps showing the last game name on the waiting screen after SIN_PARTIDA', () => {
+    renderizar();
+    act(() => {
+      panel.publicar(estado(vistaTras(EN_JUEGO)));
+    });
+
+    act(() => {
+      panel.publicar({ v: 1, tipo: 'SIN_PARTIDA' });
+    });
+
+    expect(screen.getByRole('heading', { name: 'Juego de prueba' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Top Respuestas' })).not.toBeInTheDocument();
+    expect(screen.getByText('Esperando al conductor…')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Pregunta R1' })).not.toBeInTheDocument();
+  });
+
   it('asks the panel for the state as soon as it opens', () => {
     renderizar();
 
@@ -278,5 +294,34 @@ describe('VistaTablero fullscreen button', () => {
     renderizar();
 
     expect(screen.queryByRole('button', { name: 'Pantalla completa' })).not.toBeInTheDocument();
+  });
+});
+
+describe('VistaTablero idle cursor', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    Reflect.deleteProperty(document.documentElement, 'requestFullscreen');
+  });
+
+  it('hides the cursor and the fullscreen button after 3 s still, and shows them on movement', () => {
+    vi.useFakeTimers();
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: () => Promise.resolve(),
+    });
+    renderizar();
+    expect(screen.getByRole('main')).not.toHaveClass('cursor-none');
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(screen.getByRole('main')).toHaveClass('cursor-none');
+    expect(screen.queryByRole('button', { name: 'Pantalla completa' })).not.toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('mousemove'));
+    });
+    expect(screen.getByRole('main')).not.toHaveClass('cursor-none');
+    expect(screen.getByRole('button', { name: 'Pantalla completa' })).toBeInTheDocument();
   });
 });

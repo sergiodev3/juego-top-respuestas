@@ -95,6 +95,29 @@ describe('board with prefers-reduced-motion: reduce', () => {
     expect(screen.queryByRole('img', { name: /tacha/ })).not.toBeInTheDocument();
   });
 
+  it('shows and hides the round title card without motion', () => {
+    const ganada: Evento[] = [
+      ...EN_JUEGO,
+      { tipo: 'REVELAR', indice: 1 },
+      { tipo: 'REVELAR', indice: 2 },
+      { tipo: 'REVELAR', indice: 3 },
+      { tipo: 'REVELAR', indice: 4 },
+    ];
+    const { rerender } = render(<PantallaTablero estado={partida(ganada)} />);
+
+    rerender(<PantallaTablero estado={partida([...ganada, { tipo: 'SIGUIENTE_RONDA' }])} />);
+    const tarjeta = screen.getByRole('region', { name: 'Presentación de la ronda' });
+    expect(within(tarjeta).getByText('Ronda 2 de 2')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(
+      screen.queryByRole('region', { name: 'Presentación de la ronda' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Pregunta R2' })).toBeInTheDocument();
+  });
+
   it('still shows the single face-off miss X, without motion', () => {
     const { rerender } = render(<PantallaTablero estado={partida([])} />);
 

@@ -54,7 +54,7 @@ export function SobreposicionTachas({ tachas, maximas }: SobreposicionTachasProp
         {Array.from({ length: cuenta }, (_, indice) => (
           <span
             key={indice}
-            className="text-[12rem] leading-none font-black text-red-600 [-webkit-text-stroke:6px_white] md:text-[18rem]"
+            className="text-[clamp(8rem,min(26vw,42vh),22rem)] leading-none font-black text-red-600 [-webkit-text-stroke:6px_white]"
           >
             X
           </span>

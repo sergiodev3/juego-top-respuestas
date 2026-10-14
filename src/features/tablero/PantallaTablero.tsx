@@ -6,6 +6,8 @@ import type { EstadoTablero, Temporizador } from '@/shared/sync';
 import { Marcador } from './Marcador';
 import { TableroRonda } from './TableroRonda';
 import { TableroRondaFinal } from './TableroRondaFinal';
+import { TarjetaRonda } from './TarjetaRonda';
+import { useTarjetaRonda } from './useTarjetaRonda';
 
 interface PantallaTableroProps {
   estado: EstadoTablero;
@@ -13,11 +15,11 @@ interface PantallaTableroProps {
 
 function PantallaEspera({ nombre }: { nombre: string }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
-      <h1 className="text-6xl font-extrabold tracking-tight text-amber-300 md:text-8xl">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[clamp(1.5rem,6vh,4rem)] text-center">
+      <h1 className="text-tablero-2xl leading-tight font-black tracking-tight text-balance text-amber-300">
         {nombre}
       </h1>
-      <p className="text-3xl font-semibold md:text-5xl">Esperando al conductor…</p>
+      <p className="text-tablero-lg font-semibold text-slate-100">Esperando al conductor…</p>
     </div>
   );
 }
@@ -38,9 +40,11 @@ function Contenido({
 }) {
   if (vista.fase === 'juegoTerminado') {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-        <p className="text-4xl font-semibold text-slate-200 md:text-5xl">Juego terminado</p>
-        <p className="text-6xl font-extrabold text-amber-300 md:text-8xl">{ganadores(vista)}</p>
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[clamp(0.5rem,2vh,1.5rem)] text-center">
+        <p className="text-tablero-lg font-semibold text-slate-100">Juego terminado</p>
+        <p className="text-tablero-2xl leading-tight font-black text-amber-300">
+          {ganadores(vista)}
+        </p>
         {vista.rondaFinal !== null && (
           <TableroRondaFinal vista={vista} rondaFinal={vista.rondaFinal} temporizador={null} />
         )}
@@ -65,20 +69,25 @@ function Contenido({
  * strike overlay, count-ups) honor `prefers-reduced-motion`.
  */
 export function PantallaTablero({ estado }: PantallaTableroProps) {
+  const tarjeta = useTarjetaRonda(estado);
   if (estado.tipo !== 'partida') {
-    return <PantallaEspera nombre="Top Respuestas" />;
+    // After a partida ends the board keeps its name up while the host prepares the next one.
+    const nombre = estado.tipo === 'sinPartida' ? estado.nombreJuego : null;
+    return <PantallaEspera nombre={nombre ?? 'Top Respuestas'} />;
   }
   const { vista, temporizador } = estado;
   return (
     // "user": with reduced motion, transform animations (the flips) jump to their end state.
     <MotionConfig reducedMotion="user">
-      <div className="flex flex-1 flex-col gap-6">
-        <h1 className="text-center text-4xl font-extrabold tracking-tight text-amber-300 md:text-5xl">
+      <div className="flex min-h-0 flex-1 flex-col gap-[clamp(0.5rem,2vh,1.5rem)]">
+        <h1 className="truncate text-center text-tablero-md font-extrabold tracking-tight text-amber-300">
           {vista.nombreJuego}
         </h1>
         <Contenido vista={vista} temporizador={temporizador} />
         <Marcador vista={vista} />
       </div>
+      {/* Covers the board for ~3 s at a round start; the board stays mounted underneath. */}
+      {tarjeta !== null && <TarjetaRonda tarjeta={tarjeta} />}
     </MotionConfig>
   );
 }

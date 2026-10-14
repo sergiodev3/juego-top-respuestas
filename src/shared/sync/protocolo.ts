@@ -10,7 +10,8 @@ export const VENTANA_PRESENCIA_MS = 5000;
 /** What the board displays. */
 export type EstadoTablero =
   | { readonly tipo: 'esperando' }
-  | { readonly tipo: 'sinPartida' }
+  /** `nombreJuego`: the last game the board showed, so the waiting screen can keep it. */
+  | { readonly tipo: 'sinPartida'; readonly nombreJuego: string | null }
   | {
       readonly tipo: 'partida';
       readonly partidaId: string;
@@ -21,9 +22,21 @@ export type EstadoTablero =
 
 export const ESTADO_TABLERO_INICIAL: EstadoTablero = { tipo: 'esperando' };
 
+function ultimoNombreJuego(actual: EstadoTablero): string | null {
+  switch (actual.tipo) {
+    case 'partida':
+      return actual.vista.nombreJuego;
+    case 'sinPartida':
+      return actual.nombreJuego;
+    default:
+      return null;
+  }
+}
+
 /**
  * Board-side reducer. Keeps the latest view: within one partida a message whose `secuencia` is
  * not greater than the current one is stale and ignored (the same object is returned).
+ * `SIN_PARTIDA` keeps the last known game name for the waiting screen.
  */
 export function reducirEstadoTablero(actual: EstadoTablero, mensaje: MensajeSync): EstadoTablero {
   switch (mensaje.tipo) {
@@ -43,7 +56,7 @@ export function reducirEstadoTablero(actual: EstadoTablero, mensaje: MensajeSync
         temporizador: mensaje.temporizador,
       };
     case 'SIN_PARTIDA':
-      return { tipo: 'sinPartida' };
+      return { tipo: 'sinPartida', nombreJuego: ultimoNombreJuego(actual) };
     default:
       return actual;
   }

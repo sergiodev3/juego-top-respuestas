@@ -118,9 +118,27 @@ describe('reducirEstadoTablero', () => {
 
     expect(reducirEstadoTablero(actual, { v: 1, tipo: 'SIN_PARTIDA' })).toEqual({
       tipo: 'sinPartida',
+      nombreJuego: 'Repaso',
     });
     expect(reducirEstadoTablero(actual, { v: 1, tipo: 'SOLICITAR_ESTADO' })).toBe(actual);
     expect(reducirEstadoTablero(actual, { v: 1, tipo: 'TABLERO_PRESENTE' })).toBe(actual);
+  });
+
+  it('keeps the last known game name while waiting, and has none before any partida', () => {
+    const sinPartida = { v: 1, tipo: 'SIN_PARTIDA' } as const;
+    const tras = reducirEstadoTablero(
+      reducirEstadoTablero(ESTADO_TABLERO_INICIAL, estado('p1', 5, 'Repaso de historia')),
+      sinPartida,
+    );
+
+    expect(reducirEstadoTablero(tras, sinPartida)).toEqual({
+      tipo: 'sinPartida',
+      nombreJuego: 'Repaso de historia',
+    });
+    expect(reducirEstadoTablero(ESTADO_TABLERO_INICIAL, sinPartida)).toEqual({
+      tipo: 'sinPartida',
+      nombreJuego: null,
+    });
   });
 });
 
