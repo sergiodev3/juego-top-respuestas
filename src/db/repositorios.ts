@@ -1,8 +1,10 @@
+import type { ConfigPartida, Evento } from '@/engine';
 import type {
   DatosJuego,
   DatosPregunta,
   DatosSet,
   Juego,
+  Partida,
   Pregunta,
   SetPreguntas,
 } from '@/shared/modelo';
@@ -59,6 +61,35 @@ export interface RepositorioJuegos {
   crear(datos: DatosJuego): Promise<Juego>;
 }
 
+export interface DatosNuevaPartida {
+  juegoId: string;
+  /** Snapshot built with `crearConfigPartida`; validated again before it is stored. */
+  config: ConfigPartida;
+}
+
+/**
+ * Matches (config snapshot + event log). Every write is one Dexie transaction, so the log on
+ * disk always matches what the caller gets back. Writes to a missing or deleted partida reject
+ * with `ErrorRegistroNoEncontrado`; writes to an ended one reject with `ErrorPartidaTerminada`.
+ */
+export interface RepositorioPartidas {
+  /**
+   * Starts a partida with an empty log. Any other in-progress partida is marked `terminada` in
+   * the same transaction (the UI asks for confirmation first). Rejects with Spanish messages when
+   * the config is invalid.
+   */
+  crear(datos: DatosNuevaPartida): Promise<Partida>;
+  obtener(id: string): Promise<Partida | undefined>;
+  /** The in-progress partida (most recently updated, if several), or `undefined`. */
+  obtenerEnCurso(): Promise<Partida | undefined>;
+  /** Appends a shape-valid event (rules are the caller's job) and returns the new log. */
+  agregarEvento(id: string, evento: Evento): Promise<Evento[]>;
+  /** Removes the last event (no-op on an empty log) and returns the new log. */
+  deshacer(id: string): Promise<Evento[]>;
+  /** Marks the partida `terminada`; ending an ended partida is a no-op. */
+  terminar(id: string): Promise<void>;
+}
+
 /** Where imported questions go: a set created on the fly or an existing one. */
 export type DestinoImportacion =
   { tipo: 'nuevo'; datos: DatosSet } | { tipo: 'existente'; setId: string };
@@ -91,6 +122,7 @@ export interface Repositorios {
   sets: RepositorioSets;
   preguntas: RepositorioPreguntas;
   juegos: RepositorioJuegos;
+  partidas: RepositorioPartidas;
   importacion: ServicioImportacion;
 }
 
@@ -106,18 +138,44 @@ export const dependenciasPredeterminadas: DependenciasRepositorio = {
   generarId: () => crypto.randomUUID(),
 };
 
+type EntidadRegistro = 'set' | 'pregunta' | 'partida';
+
+const MENSAJES_NO_ENCONTRADO: Record<EntidadRegistro, string> = {
+  set: 'No se encontró el set solicitado.',
+  pregunta: 'No se encontró la pregunta solicitada.',
+  partida: 'No se encontró la partida solicitada.',
+};
+
 export class ErrorRegistroNoEncontrado extends Error {
-  readonly entidad: 'set' | 'pregunta';
+  readonly entidad: EntidadRegistro;
   readonly id: string;
 
-  constructor(entidad: 'set' | 'pregunta', id: string) {
-    super(
-      entidad === 'set'
-        ? 'No se encontró el set solicitado.'
-        : 'No se encontró la pregunta solicitada.',
-    );
+  constructor(entidad: EntidadRegistro, id: string) {
+    super(MENSAJES_NO_ENCONTRADO[entidad]);
     this.name = 'ErrorRegistroNoEncontrado';
     this.entidad = entidad;
     this.id = id;
+  }
+}
+
+/** A write to a partida that already ended. */
+export class ErrorPartidaTerminada extends Error {
+  readonly id: string;
+
+  constructor(id: string) {
+    super('La partida ya terminó.');
+    this.name = 'ErrorPartidaTerminada';
+    this.id = id;
+  }
+}
+
+/** A partida config that fails `esquemaConfigPartida` or `validarConfig`. */
+export class ErrorConfigPartida extends Error {
+  readonly errores: readonly string[];
+
+  constructor(errores: readonly string[]) {
+    super(errores.join(' '));
+    this.name = 'ErrorConfigPartida';
+    this.errores = errores;
   }
 }

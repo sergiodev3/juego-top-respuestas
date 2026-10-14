@@ -1,14 +1,28 @@
+import { usePantallaCompleta } from '@/shared/pantallas';
+import { useSuscriptorTablero } from '@/shared/sync';
+
+import { PantallaTablero } from './PantallaTablero';
+
 /**
- * Projector board. Rendered outside the app shell: full screen, dark, high contrast.
- * It will only display the `proyectarTablero` projection received from the panel.
+ * Projector board (`/tablero`), rendered outside the app shell: dark, high contrast, very large
+ * type. Read-only: it shows the latest `proyectarTablero` view received from the panel and
+ * recovers by itself (it asks for the state on open, on focus and when it becomes visible).
  */
 export function VistaTablero() {
+  const estado = useSuscriptorTablero();
+  const pantallaCompleta = usePantallaCompleta();
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-black p-8 text-center text-white">
-      <h1 className="text-6xl font-extrabold tracking-tight text-amber-300 md:text-8xl">
-        Top Respuestas
-      </h1>
-      <p className="text-3xl font-semibold md:text-5xl">Esperando al conductor…</p>
+    <main className="relative flex min-h-dvh flex-col bg-slate-950 p-6 text-white md:p-10">
+      {pantallaCompleta.disponible && !pantallaCompleta.activa && (
+        <button
+          type="button"
+          onClick={pantallaCompleta.entrar}
+          className="absolute top-4 right-4 rounded-lg border-2 border-amber-300 bg-slate-900 px-4 py-2 text-lg font-semibold text-amber-300 hover:bg-slate-800"
+        >
+          Pantalla completa
+        </button>
+      )}
+      <PantallaTablero estado={estado} />
     </main>
   );
 }

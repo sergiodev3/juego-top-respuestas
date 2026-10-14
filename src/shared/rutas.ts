@@ -14,6 +14,7 @@ export const RUTAS = {
   configurarJuego: '/juego/configurar',
   configurarJuegoGuardado: '/juego/configurar/:juegoId',
   panel: '/juego/panel',
+  panelPartida: '/juego/panel/:partidaId',
   tablero: '/tablero',
   impresion: '/impresion',
   respaldos: '/respaldos',
@@ -34,6 +35,11 @@ export function rutaPreguntaNueva(setId: string): string {
 /** `/juego/configurar/:juegoId` */
 export function rutaConfigurarJuego(juegoId: string): string {
   return generatePath(RUTAS.configurarJuegoGuardado, { juegoId });
+}
+
+/** `/juego/panel/:partidaId` */
+export function rutaPanel(partidaId: string): string {
+  return generatePath(RUTAS.panelPartida, { partidaId });
 }
 
 /** `/banco/:setId/preguntas/:preguntaId` */

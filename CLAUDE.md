@@ -28,7 +28,7 @@ src/
   features/
     banco/      question bank CRUD
     importar/   .xlsx/.csv import with preview and validation
-    juego/      game setup (configurar) and host panel (panel)
+    juego/      game setup (configurar), host panel (panel), pure setup domain (dominio)
     tablero/    projector board (rendered without the app shell)
     impresion/  printable host cards
     respaldos/  JSON export/restore
@@ -37,7 +37,7 @@ src/
     sync/       BroadcastChannel panel <-> board messaging (Zod-validated)
     pantallas/  second-screen and fullscreen helpers
     sonido/     sound effects
-    modelo/     domain types + Zod schemas (Pregunta, Respuesta, SetPreguntas, Juego)
+    modelo/     domain types + Zod schemas (Pregunta, Respuesta, SetPreguntas, Juego, Partida)
     utils/      small generic helpers
     rutas.ts    path constants (RUTAS), shared so features never import from app/
 ```
@@ -62,10 +62,10 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 ## Data layer (Fase 1)
 
 - **Model** (`src/shared/modelo`): Zod schemas are the source of truth; types come from `z.output`. `esquemaDatos*` schemas validate editable input and normalize it (trim, drop blank answer rows, sort answers by points desc via `ordenarRespuestas`, stable on ties). Validation messages are user-facing Spanish. Limits: 1-8 answers, answer text 1-80 chars, points integer >= 0.
-- **Dexie schema** (`src/db/baseDatos.ts`): tables `sets`, `preguntas` (indexed by `setId`, `tema`), `juegos` (typed as `Juego` since Fase 2), `partidas`, and `meta` (key `clave`). `partidas` only has a placeholder type until Fase 4.
+- **Dexie schema** (`src/db/baseDatos.ts`): tables `sets`, `preguntas` (indexed by `setId`, `tema`), `juegos` (typed as `Juego` since Fase 2), `partidas` (typed as `Partida` since Fase 4, indexed by `juegoId`, `estado`), and `meta` (key `clave`). Current version: 2 (see Fase 4).
 - **Records**: IDs from `crypto.randomUUID()`; `creadoEn`, `actualizadoEn`, `eliminadoEn` are epoch milliseconds. Every write sets `actualizadoEn`.
 - **Soft delete**: delete sets `eliminadoEn` (tombstone for future sync); reads hide those rows. IndexedDB cannot index `null`, so filter `eliminadoEn === null` in code. Deleting a set soft-deletes its questions in the same transaction.
-- **Repositories**: features use the interfaces in `src/db/repositorios.ts` (`RepositorioSets`, `RepositorioPreguntas`, `RepositorioJuegos`, `ServicioImportacion`), never Dexie. `crearRepositoriosDexie(db, { ahora, generarId })` implements them; writes re-validate with the schemas. React gets them from `RepositoriosProvider` (defaults to the app instance in `src/db/instancia.ts`) via `useRepositorios()`; read with `useLiveQuery(() => repositorios.x.y(...), deps)`. Repository reads must only await Dexie calls so `liveQuery` keeps tracking them.
+- **Repositories**: features use the interfaces in `src/db/repositorios.ts` (`RepositorioSets`, `RepositorioPreguntas`, `RepositorioJuegos`, `RepositorioPartidas`, `ServicioImportacion`), never Dexie. `crearRepositoriosDexie(db, { ahora, generarId })` implements them; writes re-validate with the schemas. React gets them from `RepositoriosProvider` (defaults to the app instance in `src/db/instancia.ts`) via `useRepositorios()`; read with `useLiveQuery(() => repositorios.x.y(...), deps)`. Repository reads must only await Dexie calls so `liveQuery` keeps tracking them.
 - **Startup** (`src/app/main.tsx`): `solicitarAlmacenamientoPersistente()` (never throws) and `aplicarSemillaSiHaceFalta(baseDatos)`. The seed ("Cultura general escolar", 10 questions) runs once: the `semillaAplicada` flag in `meta` is written in the same transaction, so deleting the sample set never reseeds.
 - **Adding a schema version**: never edit a shipped `this.version(n)` block. Add `this.version(n + 1).stores({ changed tables only })` with an optional `.upgrade(tx => ...)` that migrates existing rows, below the previous version in the `BaseDatosTopRespuestas` constructor, and add a test that opens an older-version database and checks the migrated data.
 
@@ -85,6 +85,19 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - **Snapshot config**: `ConfigPartida` is engine-owned (teams by index 0-3, rounds with `PreguntaSnapshot` + multiplier, `tachasMaximas`, optional final round with exactly 5 questions). The engine never imports `@/shared/modelo`; Fase 4 maps `Juego` + questions into it.
 - **Replay never throws** on a bad stored event: it is checked against `esquemaEvento` (Zod) and the rules, then skipped and listed in `estado.advertencias` (`{ indice, codigo, motivo }`, `EVENTO_MALFORMADO` for a bad shape). `reducir` expects a valid config (it throws otherwise); data read from storage must go through `reconstruir(config: unknown, eventos: unknown)`, which never throws and returns `{ ok: true, config, estado, advertencias } | { ok: false, errores }`. Zod is allowed in the engine (pure library).
 - Rules source of truth: "Rules specification" in `odd/tasks/fase-3-motor.md`; overview, phase diagram and event table in `src/engine/README.md`. `npm run test:coverage` gates `src/engine/**` (lines/statements/functions >= 95%, branches >= 90%).
+
+## Partidas, sync and board (Fase 4)
+
+- **Partida** (`src/shared/modelo/partida.ts`): `{ id, juegoId, config: ConfigPartida, eventos: Evento[], estado: 'enCurso' | 'terminada', creadoEn, actualizadoEn, eliminadoEn }`. The game state is never stored; it is rebuilt from the snapshot and the log.
+- **`repositorios.partidas`**: `crear({ juegoId, config })` re-checks the config like a load (`ErrorConfigPartida` with Spanish `errores`) and ends any other `enCurso` partida in the same transaction (the UI confirms first); `obtener`, `obtenerEnCurso`; `agregarEvento(id, evento)` (shape-checked with `esquemaEvento`; rules are the caller's job via `validar`) and `deshacer(id)` are one read-modify-write transaction each and return the new log; `terminar(id)` is idempotent. Writes to an ended partida reject with `ErrorPartidaTerminada` ("La partida ya terminó."); missing ones with `ErrorRegistroNoEncontrado('partida')`.
+- **Dexie v2**: same indexes; the upgrade gives v1 placeholder `partidas` rows an empty log and ends those without a snapshot (tested in `src/db/baseDatos.test.ts` by opening a real v1 database first).
+- **Setup domain** (`src/features/juego/dominio`, pure): `crearConfigPartida(juego, preguntasPorId: ReadonlyMap)` deep-copies the questions into a `ConfigPartida` and returns `{ ok, config } | { ok: false, errores }` (missing/deleted questions: "La pregunta de la ronda N ya no está en el banco."; then `esquemaConfigPartida` + `validarConfig` through `reconstruir`). `crearJuegoRapido(set, preguntas, aleatorio)` picks up to 4 random non-deleted questions (inject the RNG) and reuses `crearJuegoPorDefecto`. `cargarPartida(partida | undefined)` wraps `reconstruir` and never throws.
+- **Sync protocol** (`src/shared/sync`, import from `@/shared/sync`): BroadcastChannel `top-respuestas`, Zod discriminated union with `v: 1`. Panel -> board: `ESTADO_TABLERO { partidaId, secuencia, vista, temporizador: { restante, total, corriendo } | null }`, `SIN_PARTIDA`. Board -> panel: `SOLICITAR_ESTADO` (on mount, focus, visibility), `TABLERO_PRESENTE` (every 2 s). `esquemaVistaTablero` mirrors the engine `VistaTablero` (`satisfies` + an `expectTypeOf` test both ways). `crearCanal(transporte)` re-parses outgoing messages (unknown keys are stripped, so nothing beyond the projection leaves the panel) and ignores invalid incoming ones.
+- **Staleness and presence**: the board keeps the newest view per partida (`reducirEstadoTablero`: `secuencia` <= current is ignored; another `partidaId` always wins). Panel sequences come from `crearContadorSecuencia(ahora)` (strictly increasing and never below `Date.now()`), so a reloaded panel is never taken for stale. The panel shows the board as connected while a board message is at most 5 s old (`tableroConectado`).
+- **Hooks**: `usePublicadorTablero(datos | null)` (panel: publishes on value change, answers `SOLICITAR_ESTADO`, sends `SIN_PARTIDA` for `null` and on unmount, returns `{ tableroConectado }`) and `useSuscriptorTablero()` (board: returns `EstadoTablero`). They use the window's app channel (`obtenerCanalApp`) unless `CanalSyncProvider` injects one; tests use `crearBusMemoria()` from `src/test/transporteMemoria.ts`.
+- **Second screen** (`src/shared/pantallas`): `abrirTablero(url)` asks `getScreenDetails` (Chromium only; needs permission) and opens a `popup` at the bounds of a non-primary screen (`elegirPantallaProyector`); otherwise (API missing, denied, single screen, positioned popup blocked) it opens a normal window and returns `requiereInstrucciones: true`; `{ modo: 'bloqueado' }` when `window.open` returns `null`. Call it from a click handler. `crearGestorTablero()` keeps the window: `reconectar` focuses it if still open, else reopens. Window name `top-respuestas-tablero`.
+- **Board** (`/tablero`, `src/features/tablero`): container `VistaTablero` (subscription + "Pantalla completa" button via `usePantallaCompleta`, hidden while fullscreen or when unsupported) and presentational `PantallaTablero`, `TableroRonda`, `TableroRondaFinal`, `Marcador`. It renders only projection fields; hidden slots show just their number. Waiting screen ("Esperando al conductor…") before any state and after `SIN_PARTIDA`. No animations, sounds or cursor hiding yet (Fase 5).
+- **Inicio**: "Continuar partida" links to `rutaPanel(partidaId)` (`/juego/panel/:partidaId`) when `obtenerEnCurso()` returns one.
 
 ## Testing
 

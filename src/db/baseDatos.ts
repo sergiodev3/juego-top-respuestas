@@ -1,16 +1,6 @@
 import { Dexie, type DexieOptions, type EntityTable, type Table } from 'dexie';
 
-import type { Juego, Pregunta, SetPreguntas } from '@/shared/modelo';
-
-/** Stored match (config snapshot + event log). Full shape arrives in Fase 4. */
-export interface PartidaGuardada {
-  id: string;
-  juegoId: string;
-  estado: 'enCurso' | 'terminada';
-  creadoEn: number;
-  actualizadoEn: number;
-  eliminadoEn: number | null;
-}
+import type { Juego, Partida, Pregunta, SetPreguntas } from '@/shared/modelo';
 
 /** Small key-value store for app bookkeeping (e.g. whether the seed was applied). */
 export interface EntradaMeta {
@@ -19,6 +9,13 @@ export interface EntradaMeta {
 }
 
 export const NOMBRE_BASE_DATOS = 'top-respuestas';
+
+/** Version 1 shipped `partidas` as a placeholder without a config snapshot or event log. */
+interface PartidaVersion1 {
+  config?: unknown;
+  eventos?: unknown;
+  estado: string;
+}
 
 /**
  * IndexedDB database. Every schema change is a new `this.version(n)` block; never edit a
@@ -30,7 +27,7 @@ export class BaseDatosTopRespuestas extends Dexie {
   declare sets: EntityTable<SetPreguntas, 'id'>;
   declare preguntas: EntityTable<Pregunta, 'id'>;
   declare juegos: EntityTable<Juego, 'id'>;
-  declare partidas: EntityTable<PartidaGuardada, 'id'>;
+  declare partidas: EntityTable<Partida, 'id'>;
   declare meta: Table<EntradaMeta, string>;
 
   constructor(nombre: string = NOMBRE_BASE_DATOS, opciones?: DexieOptions) {
@@ -44,11 +41,25 @@ export class BaseDatosTopRespuestas extends Dexie {
       meta: 'clave',
     });
 
-    // Next schema change goes here, keeping version 1 untouched. Example:
-    // this.version(2)
-    //   .stores({ preguntas: 'id, setId, tema, actualizadoEn, dificultad' })
-    //   .upgrade((tx) =>
-    //     tx.table('preguntas').toCollection().modify((p) => { p.dificultad ??= 'media'; }),
-    //   );
+    // Fase 4: partidas hold a config snapshot and an event log. Indexes are unchanged; the
+    // upgrade gives placeholder rows an empty log and ends those without a snapshot, so they
+    // never show up as "Continuar partida".
+    this.version(2)
+      .stores({ partidas: 'id, juegoId, estado, actualizadoEn' })
+      .upgrade((tx) =>
+        tx
+          .table<PartidaVersion1>('partidas')
+          .toCollection()
+          .modify((partida) => {
+            if (!Array.isArray(partida.eventos)) {
+              partida.eventos = [];
+            }
+            if (partida.config === undefined) {
+              partida.estado = 'terminada';
+            }
+          }),
+      );
+
+    // Next schema change goes here as `this.version(3)`, keeping versions 1 and 2 untouched.
   }
 }

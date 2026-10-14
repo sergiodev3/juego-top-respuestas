@@ -1,6 +1,8 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router';
 
-import { RUTAS } from '@/shared/rutas';
+import { useRepositorios } from '@/db/contextoRepositorios';
+import { RUTAS, rutaPanel } from '@/shared/rutas';
 import { cx } from '@/shared/utils/cx';
 
 const TARJETAS = [
@@ -27,6 +29,36 @@ const TARJETAS = [
 ] as const;
 
 const CLASE_TARJETA = 'block rounded-xl border p-6 shadow-sm';
+const CLASE_TARJETA_ACTIVA = cx(
+  CLASE_TARJETA,
+  'border-slate-200 bg-white transition-colors hover:border-amber-400 hover:bg-amber-50',
+);
+
+function TarjetaContinuar() {
+  const repositorios = useRepositorios();
+  const partida = useLiveQuery(() => repositorios.partidas.obtenerEnCurso(), [repositorios]);
+
+  if (partida === undefined) {
+    return (
+      <div
+        aria-disabled="true"
+        className={cx(
+          CLASE_TARJETA,
+          'cursor-not-allowed border-slate-300 bg-slate-100 text-slate-500',
+        )}
+      >
+        <h2 className="text-xl font-semibold">Continuar partida</h2>
+        <p>No hay una partida en curso.</p>
+      </div>
+    );
+  }
+  return (
+    <Link to={rutaPanel(partida.id)} className={cx(CLASE_TARJETA_ACTIVA, 'border-amber-400')}>
+      <h2 className="text-xl font-semibold">Continuar partida</h2>
+      <p className="text-slate-700">{partida.config.nombre}</p>
+    </Link>
+  );
+}
 
 export function VistaInicio() {
   return (
@@ -40,26 +72,11 @@ export function VistaInicio() {
 
       <ul className="grid gap-4 sm:grid-cols-2">
         <li>
-          <div
-            aria-disabled="true"
-            className={cx(
-              CLASE_TARJETA,
-              'cursor-not-allowed border-slate-300 bg-slate-100 text-slate-500',
-            )}
-          >
-            <h2 className="text-xl font-semibold">Continuar partida</h2>
-            <p>No hay una partida en curso.</p>
-          </div>
+          <TarjetaContinuar />
         </li>
         {TARJETAS.map((tarjeta) => (
           <li key={tarjeta.to}>
-            <Link
-              to={tarjeta.to}
-              className={cx(
-                CLASE_TARJETA,
-                'border-slate-200 bg-white transition-colors hover:border-amber-400 hover:bg-amber-50',
-              )}
-            >
+            <Link to={tarjeta.to} className={CLASE_TARJETA_ACTIVA}>
               <h2 className="text-xl font-semibold">{tarjeta.titulo}</h2>
               <p className="text-slate-700">{tarjeta.descripcion}</p>
             </Link>

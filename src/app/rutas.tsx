@@ -34,6 +34,7 @@ export const rutas: RouteObject[] = [
       { path: RUTAS.configurarJuego, element: <VistaConfigurarJuego /> },
       { path: RUTAS.configurarJuegoGuardado, element: <VistaConfigurarJuego /> },
       { path: RUTAS.panel, element: <VistaPanel /> },
+      { path: RUTAS.panelPartida, element: <VistaPanel /> },
       { path: RUTAS.impresion, element: <VistaImpresion /> },
       { path: RUTAS.respaldos, element: <VistaRespaldos /> },
       { path: '*', element: <VistaError noEncontrada /> },

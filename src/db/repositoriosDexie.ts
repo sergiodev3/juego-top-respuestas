@@ -11,6 +11,7 @@ import { contieneTexto } from '@/shared/utils/normalizarTexto';
 
 import type { BaseDatosTopRespuestas } from './baseDatos';
 import { crearRepositorioJuegos } from './repositorioJuegosDexie';
+import { crearRepositorioPartidas } from './repositorioPartidasDexie';
 import {
   dependenciasPredeterminadas,
   ErrorRegistroNoEncontrado,
@@ -258,6 +259,7 @@ export function crearRepositoriosDexie(
     sets: crearRepositorioSets(db, dependencias),
     preguntas: crearRepositorioPreguntas(db, dependencias),
     juegos: crearRepositorioJuegos(db, dependencias),
+    partidas: crearRepositorioPartidas(db, dependencias),
     importacion: crearServicioImportacion(db, dependencias),
   };
 }
