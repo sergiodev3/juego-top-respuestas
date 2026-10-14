@@ -119,6 +119,8 @@ Runner: Vitest (node env). RED → GREEN per rule group.
 - (W) `reducir` calls `crearEstadoInicial`, which throws on an invalid config — contradicts "replay never throws"; return a recoverable result (or validate the snapshot at load) and test it.
 - (W) Runtime event-shape guard only checks `tipo`; malformed fields of known events reach rule code. Validate stored events with a Zod schema at the persistence boundary (Fase 4 already needs Zod schemas for events/messages) and add replay tests for malformed shapes.
 
+- T3.4 commit `4e3b240`; RDD medium (16 files / 680 lines); user granted; review-reliability approved; acknowledged (lineage review-0efa2ebc1f4236b1). Advisory (S): config schema accepts fractional answer points — consider `Number.isInteger` on `puntos` in `esquemaConfigPartida`.
+
 ## Next step
 
-User approval before Fase 4 (game config + conductor panel + synced board + second screen).
+Fase 3 complete. User asked to start Fase 4 after these fixes.
