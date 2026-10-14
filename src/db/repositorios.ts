@@ -59,6 +59,10 @@ export interface RepositorioJuegos {
   listar(): Promise<Juego[]>;
   obtener(id: string): Promise<Juego | undefined>;
   crear(datos: DatosJuego): Promise<Juego>;
+  /** Replaces the editable data; rejects with `ErrorRegistroNoEncontrado` for a missing game. */
+  actualizar(id: string, datos: DatosJuego): Promise<Juego>;
+  /** Soft delete; partidas keep their own snapshot, so they are not touched. */
+  eliminar(id: string): Promise<void>;
 }
 
 export interface DatosNuevaPartida {
@@ -138,11 +142,12 @@ export const dependenciasPredeterminadas: DependenciasRepositorio = {
   generarId: () => crypto.randomUUID(),
 };
 
-type EntidadRegistro = 'set' | 'pregunta' | 'partida';
+type EntidadRegistro = 'set' | 'pregunta' | 'juego' | 'partida';
 
 const MENSAJES_NO_ENCONTRADO: Record<EntidadRegistro, string> = {
   set: 'No se encontró el set solicitado.',
   pregunta: 'No se encontró la pregunta solicitada.',
+  juego: 'No se encontró el juego solicitado.',
   partida: 'No se encontró la partida solicitada.',
 };
 

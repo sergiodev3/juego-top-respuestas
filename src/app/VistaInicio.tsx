@@ -7,9 +7,14 @@ import { cx } from '@/shared/utils/cx';
 
 const TARJETAS = [
   {
-    to: RUTAS.configurarJuego,
+    to: RUTAS.juegoRapido,
     titulo: 'Nuevo juego rápido',
-    descripcion: 'Arma una partida con valores por defecto en pocos clics.',
+    descripcion: 'Un set, dos clics y a jugar.',
+  },
+  {
+    to: RUTAS.configurarJuego,
+    titulo: 'Configurar juego',
+    descripcion: 'Equipos, reglas, rondas y preguntas a la medida, o un juego guardado.',
   },
   {
     to: RUTAS.banco,

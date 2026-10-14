@@ -8,12 +8,29 @@ export const TACHAS_MAXIMAS_PREDETERMINADAS = 3;
 export const SEGUNDOS_RONDA_FINAL_PREDETERMINADOS: [number, number] = [20, 25];
 export const META_RONDA_FINAL_PREDETERMINADA = 200;
 export const MAX_RONDAS_PREDETERMINADAS = 4;
+/** The final round always has exactly this many questions (mirrors the engine rule). */
+export const PREGUNTAS_RONDA_FINAL = 5;
 
 /**
  * Team colors, all dark enough for white text (WCAG AA) and distinct from each other.
  * Order matches the default team order (A, B, C, D).
  */
 export const COLORES_EQUIPOS = ['#1d4ed8', '#b91c1c', '#047857', '#7e22ce'] as const;
+
+/**
+ * Colors a team can pick in the setup form. All keep white text at WCAG AA contrast (>= 4.5:1)
+ * and are distinct hues; the first four are the default team colors.
+ */
+export const PALETA_EQUIPOS: readonly { color: string; nombre: string }[] = [
+  { color: COLORES_EQUIPOS[0], nombre: 'Azul' },
+  { color: COLORES_EQUIPOS[1], nombre: 'Rojo' },
+  { color: COLORES_EQUIPOS[2], nombre: 'Verde' },
+  { color: COLORES_EQUIPOS[3], nombre: 'Morado' },
+  { color: '#c2410c', nombre: 'Naranja' },
+  { color: '#be185d', nombre: 'Rosa' },
+  { color: '#0e7490', nombre: 'Turquesa' },
+  { color: '#374151', nombre: 'Gris' },
+];
 
 export const esquemaEquipo = z.object({
   id: z.string().min(1),
@@ -36,21 +53,36 @@ export const esquemaMultiplicador = z.union([z.literal(1), z.literal(2), z.liter
 export type Multiplicador = z.output<typeof esquemaMultiplicador>;
 
 export const esquemaRonda = z.object({
-  preguntaId: z.string().min(1),
+  preguntaId: z.string().min(1, { error: 'Falta elegir la pregunta.' }),
   multiplicador: esquemaMultiplicador,
 });
 
 export type Ronda = z.output<typeof esquemaRonda>;
 
+const MENSAJE_TACHAS = 'Las tachas por ronda deben ser un número entero de 1 en adelante.';
+const MENSAJE_SEGUNDOS = 'Los segundos de la ronda final deben ser un número entero mayor que 0.';
+const MENSAJE_META = 'La meta de la ronda final debe ser un número entero mayor que 0.';
+
+const esquemaSegundos = z
+  .number({ error: MENSAJE_SEGUNDOS })
+  .int({ error: MENSAJE_SEGUNDOS })
+  .positive({ error: MENSAJE_SEGUNDOS });
+
 export const esquemaReglas = z.object({
-  tachasMaximas: z.number().int().min(1),
+  tachasMaximas: z
+    .number({ error: MENSAJE_TACHAS })
+    .int({ error: MENSAJE_TACHAS })
+    .min(1, { error: MENSAJE_TACHAS }),
   rondaFinal: z.object({
     activa: z.boolean(),
     preguntaIds: z.array(z.string().min(1)),
     /** Timer seconds for the first and second player. */
-    segundos: z.tuple([z.number().int().positive(), z.number().int().positive()]),
+    segundos: z.tuple([esquemaSegundos, esquemaSegundos]),
     /** Points the pair must reach to win the final round. */
-    meta: z.number().int().positive(),
+    meta: z
+      .number({ error: MENSAJE_META })
+      .int({ error: MENSAJE_META })
+      .positive({ error: MENSAJE_META }),
   }),
 });
 
@@ -86,7 +118,7 @@ export const esquemaJuego = esquemaDatosJuego.extend({
 export type Juego = z.output<typeof esquemaJuego>;
 
 /** x1 for every round, except a 4-round game, which ends with x2 and x3. */
-function multiplicadorPredeterminado(indice: number, totalRondas: number): Multiplicador {
+export function multiplicadorPredeterminado(indice: number, totalRondas: number): Multiplicador {
   if (totalRondas === MAX_RONDAS_PREDETERMINADAS) {
     if (indice === 2) {
       return 2;

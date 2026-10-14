@@ -6,6 +6,7 @@ import { VistaSetBanco } from '@/features/banco/VistaSetBanco';
 import { VistaImportar } from '@/features/importar/VistaImportar';
 import { VistaImpresion } from '@/features/impresion/VistaImpresion';
 import { VistaConfigurarJuego } from '@/features/juego/VistaConfigurarJuego';
+import { VistaJuegoRapido } from '@/features/juego/VistaJuegoRapido';
 import { VistaPanel } from '@/features/juego/VistaPanel';
 import { VistaRespaldos } from '@/features/respaldos/VistaRespaldos';
 import { VistaTablero } from '@/features/tablero/VistaTablero';
@@ -33,6 +34,7 @@ export const rutas: RouteObject[] = [
       { path: RUTAS.importar, element: <VistaImportar /> },
       { path: RUTAS.configurarJuego, element: <VistaConfigurarJuego /> },
       { path: RUTAS.configurarJuegoGuardado, element: <VistaConfigurarJuego /> },
+      { path: RUTAS.juegoRapido, element: <VistaJuegoRapido /> },
       { path: RUTAS.panel, element: <VistaPanel /> },
       { path: RUTAS.panelPartida, element: <VistaPanel /> },
       { path: RUTAS.impresion, element: <VistaImpresion /> },

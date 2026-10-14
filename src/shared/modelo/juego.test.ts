@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { crearJuegoPorDefecto, esquemaDatosJuego } from './juego';
+import { COLORES_EQUIPOS, crearJuegoPorDefecto, esquemaDatosJuego, PALETA_EQUIPOS } from './juego';
 
 describe('crearJuegoPorDefecto', () => {
   it('creates two teams, 3 strikes and the final round turned off', () => {
@@ -67,5 +67,45 @@ describe('esquemaDatosJuego', () => {
     expect(esquemaDatosJuego.safeParse({ ...base, nombre: '  ' }).error?.issues[0]?.message).toBe(
       'Escribe el nombre del juego.',
     );
+  });
+
+  it('explains invalid rules and rounds in Spanish', () => {
+    const mensajes = (datos: unknown) =>
+      esquemaDatosJuego.safeParse(datos).error?.issues.map((issue) => issue.message) ?? [];
+
+    expect(mensajes({ ...base, reglas: { ...base.reglas, tachasMaximas: Number.NaN } })).toEqual([
+      'Las tachas por ronda deben ser un número entero de 1 en adelante.',
+    ]);
+    expect(mensajes({ ...base, reglas: { ...base.reglas, tachasMaximas: 0 } })).toEqual([
+      'Las tachas por ronda deben ser un número entero de 1 en adelante.',
+    ]);
+    expect(
+      mensajes({
+        ...base,
+        reglas: {
+          ...base.reglas,
+          rondaFinal: { ...base.reglas.rondaFinal, segundos: [0, 25], meta: 1.5 },
+        },
+      }),
+    ).toEqual([
+      'Los segundos de la ronda final deben ser un número entero mayor que 0.',
+      'La meta de la ronda final debe ser un número entero mayor que 0.',
+    ]);
+    expect(mensajes({ ...base, rondas: [{ preguntaId: '', multiplicador: 1 }] })).toEqual([
+      'Falta elegir la pregunta.',
+    ]);
+  });
+});
+
+describe('PALETA_EQUIPOS', () => {
+  it('offers distinct #RRGGBB colors with names, starting with the default team colors', () => {
+    const colores = PALETA_EQUIPOS.map((opcion) => opcion.color);
+
+    expect(new Set(colores).size).toBe(colores.length);
+    expect(colores.slice(0, COLORES_EQUIPOS.length)).toEqual([...COLORES_EQUIPOS]);
+    for (const opcion of PALETA_EQUIPOS) {
+      expect(opcion.color).toMatch(/^#[0-9a-f]{6}$/u);
+      expect(opcion.nombre).not.toBe('');
+    }
   });
 });

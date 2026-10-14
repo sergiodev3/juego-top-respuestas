@@ -56,6 +56,19 @@ describe('VistaInicio', () => {
     expect(enlace).toHaveTextContent('Repaso de historia');
   });
 
+  it('links to the quick game chooser and to the full game setup', async () => {
+    renderizar();
+
+    expect(await screen.findByRole('link', { name: /Nuevo juego rápido/u })).toHaveAttribute(
+      'href',
+      RUTAS.juegoRapido,
+    );
+    expect(screen.getByRole('link', { name: /Configurar juego/u })).toHaveAttribute(
+      'href',
+      RUTAS.configurarJuego,
+    );
+  });
+
   it('hides an ended partida', async () => {
     const partida = await entorno.repositorios.partidas.crear({
       juegoId: 'juego-1',

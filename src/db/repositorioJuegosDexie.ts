@@ -1,7 +1,11 @@
 import { esquemaDatosJuego, type Juego } from '@/shared/modelo';
 
 import type { BaseDatosTopRespuestas } from './baseDatos';
-import type { DependenciasRepositorio, RepositorioJuegos } from './repositorios';
+import {
+  ErrorRegistroNoEncontrado,
+  type DependenciasRepositorio,
+  type RepositorioJuegos,
+} from './repositorios';
 
 function estaVigente(registro: { eliminadoEn: number | null }): boolean {
   return registro.eliminadoEn === null;
@@ -11,6 +15,14 @@ export function crearRepositorioJuegos(
   db: BaseDatosTopRespuestas,
   { ahora, generarId }: DependenciasRepositorio,
 ): RepositorioJuegos {
+  async function obtenerVigente(id: string): Promise<Juego> {
+    const juego = await db.juegos.get(id);
+    if (!juego || !estaVigente(juego)) {
+      throw new ErrorRegistroNoEncontrado('juego', id);
+    }
+    return juego;
+  }
+
   return {
     async listar() {
       const juegos = await db.juegos.toArray();
@@ -36,6 +48,24 @@ export function crearRepositorioJuegos(
       };
       await db.juegos.add(juego);
       return juego;
+    },
+
+    async actualizar(id, datos) {
+      const validos = esquemaDatosJuego.parse(datos);
+      return db.transaction('rw', db.juegos, async () => {
+        const actual = await obtenerVigente(id);
+        const actualizado: Juego = { ...actual, ...validos, actualizadoEn: ahora() };
+        await db.juegos.put(actualizado);
+        return actualizado;
+      });
+    },
+
+    async eliminar(id) {
+      await db.transaction('rw', db.juegos, async () => {
+        await obtenerVigente(id);
+        const momento = ahora();
+        await db.juegos.update(id, { eliminadoEn: momento, actualizadoEn: momento });
+      });
     },
   };
 }

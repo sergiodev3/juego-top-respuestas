@@ -58,4 +58,58 @@ describe('RepositorioJuegos (Dexie)', () => {
     expect(await repositorios.juegos.obtener(borrado.id)).toBeUndefined();
     expect(await repositorios.juegos.obtener(viejo.id)).toBeDefined();
   });
+
+  it('updates a game: new data and actualizadoEn, same id and creadoEn', async () => {
+    const { repositorios, reloj } = entorno;
+    const creado = await repositorios.juegos.crear(
+      crearJuegoPorDefecto({ nombre: 'Repaso', preguntaIds: ['p1'] }),
+    );
+    reloj.avanzar();
+    const cambios = crearJuegoPorDefecto({ nombre: ' Final ', preguntaIds: ['p2', 'p3'] });
+
+    const actualizado = await repositorios.juegos.actualizar(creado.id, cambios);
+
+    expect(actualizado).toEqual({
+      ...cambios,
+      nombre: 'Final',
+      id: creado.id,
+      creadoEn: creado.creadoEn,
+      actualizadoEn: reloj.ahora(),
+      eliminadoEn: null,
+    });
+    expect(await repositorios.juegos.obtener(creado.id)).toEqual(actualizado);
+  });
+
+  it('rejects updates with invalid data or for a missing game', async () => {
+    const { repositorios } = entorno;
+    const datos = crearJuegoPorDefecto({ nombre: 'Repaso', preguntaIds: [] });
+    const creado = await repositorios.juegos.crear(datos);
+
+    await expect(
+      repositorios.juegos.actualizar(creado.id, { ...datos, nombre: '' }),
+    ).rejects.toThrow('Escribe el nombre del juego.');
+    await expect(repositorios.juegos.actualizar('no-existe', datos)).rejects.toThrow(
+      'No se encontró el juego solicitado.',
+    );
+  });
+
+  it('soft-deletes a game so reads hide it', async () => {
+    const { repositorios, reloj, db } = entorno;
+    const creado = await repositorios.juegos.crear(
+      crearJuegoPorDefecto({ nombre: 'Repaso', preguntaIds: [] }),
+    );
+    reloj.avanzar();
+
+    await repositorios.juegos.eliminar(creado.id);
+
+    expect(await repositorios.juegos.obtener(creado.id)).toBeUndefined();
+    expect(await repositorios.juegos.listar()).toEqual([]);
+    expect(await db.juegos.get(creado.id)).toMatchObject({
+      eliminadoEn: reloj.ahora(),
+      actualizadoEn: reloj.ahora(),
+    });
+    await expect(repositorios.juegos.eliminar(creado.id)).rejects.toThrow(
+      'No se encontró el juego solicitado.',
+    );
+  });
 });

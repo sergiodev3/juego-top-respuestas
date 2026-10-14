@@ -13,6 +13,7 @@ export const RUTAS = {
   importar: '/importar',
   configurarJuego: '/juego/configurar',
   configurarJuegoGuardado: '/juego/configurar/:juegoId',
+  juegoRapido: '/juego/rapido',
   panel: '/juego/panel',
   panelPartida: '/juego/panel/:partidaId',
   tablero: '/tablero',
