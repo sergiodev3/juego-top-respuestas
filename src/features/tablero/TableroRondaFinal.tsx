@@ -1,7 +1,11 @@
+import { motion } from 'motion/react';
 import { useId } from 'react';
 
 import type { VistaJugadorRondaFinal, VistaRondaFinal, VistaTablero } from '@/engine';
 import type { Temporizador } from '@/shared/sync';
+
+import { NumeroAnimado } from './NumeroAnimado';
+import { DURACION_VOLTEO_S, VOLTEO } from './volteo';
 
 interface TableroRondaFinalProps {
   vista: VistaTablero;
@@ -22,10 +26,15 @@ function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
       {jugador.oculto ? (
         <p className="py-8 text-center text-4xl font-semibold text-blue-300">Respuestas ocultas</p>
       ) : (
-        <ol className="flex flex-col gap-3">
+        <ol className="flex flex-col gap-3 perspective-distant">
           {jugador.respuestas.map((respuesta) => (
-            <li
+            <motion.li
               key={respuesta.numero}
+              // Same reveal flip as the round slots; answers revealed on mount show at once.
+              initial={false}
+              animate={respuesta.revelada ? 'revelada' : 'oculta'}
+              variants={VOLTEO}
+              transition={{ duration: DURACION_VOLTEO_S, ease: 'easeOut' }}
               className="flex min-h-16 items-center gap-4 rounded-lg bg-blue-900 px-4 text-4xl font-bold"
             >
               {respuesta.revelada && (
@@ -34,7 +43,7 @@ function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
                   <span className="tabular-nums text-amber-300">{respuesta.puntos}</span>
                 </>
               )}
-            </li>
+            </motion.li>
           ))}
         </ol>
       )}
@@ -65,7 +74,13 @@ export function TableroRondaFinal({ vista, rondaFinal, temporizador }: TableroRo
         ))}
       </div>
       <p className="text-center text-5xl font-extrabold text-amber-300 md:text-6xl">
-        {`Total: ${String(rondaFinal.total)} de ${String(rondaFinal.meta)}`}
+        <span className="sr-only">
+          {`Total: ${String(rondaFinal.total)} de ${String(rondaFinal.meta)}`}
+        </span>
+        <span aria-hidden="true">
+          Total: <NumeroAnimado valor={rondaFinal.total} className="tabular-nums" /> de{' '}
+          {rondaFinal.meta}
+        </span>
       </p>
       {rondaFinal.resultado !== null && (
         <p role="status" className="text-center text-5xl font-extrabold md:text-6xl">

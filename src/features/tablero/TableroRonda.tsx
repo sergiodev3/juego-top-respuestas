@@ -1,5 +1,11 @@
+import { motion } from 'motion/react';
+
 import type { VistaRespuesta, VistaRonda, VistaTablero } from '@/engine';
 import { cx } from '@/shared/utils/cx';
+
+import { NumeroAnimado } from './NumeroAnimado';
+import { SobreposicionTachas } from './SobreposicionTachas';
+import { DURACION_VOLTEO_S, VOLTEO } from './volteo';
 
 interface TableroRondaProps {
   vista: VistaTablero;
@@ -8,7 +14,13 @@ interface TableroRondaProps {
 
 function Casilla({ respuesta }: { respuesta: VistaRespuesta }) {
   return (
-    <li
+    <motion.li
+      // `initial={false}` starts at the current state: slots already revealed when the board
+      // mounts (load, reconnect, new round) show at once; only a later reveal flips.
+      initial={false}
+      animate={respuesta.revelada ? 'revelada' : 'oculta'}
+      variants={VOLTEO}
+      transition={{ duration: DURACION_VOLTEO_S, ease: 'easeOut' }}
       className={cx(
         'flex min-h-20 items-center gap-4 rounded-xl border-4 px-4 py-2 text-4xl font-bold md:min-h-24 md:text-5xl',
         respuesta.revelada
@@ -25,7 +37,7 @@ function Casilla({ respuesta }: { respuesta: VistaRespuesta }) {
           <span className="tabular-nums text-amber-300">{respuesta.puntos}</span>
         </>
       )}
-    </li>
+    </motion.li>
   );
 }
 
@@ -90,15 +102,22 @@ export function TableroRonda({ vista, ronda }: TableroRondaProps) {
       <h2 className="text-center text-5xl leading-tight font-extrabold md:text-6xl">
         {ronda.pregunta}
       </h2>
-      <ol aria-label="Respuestas" className="grid grid-flow-col grid-rows-4 gap-4">
+      <ol
+        aria-label="Respuestas"
+        className="grid grid-flow-col grid-rows-4 gap-4 perspective-distant"
+      >
         {ronda.respuestas.map((respuesta) => (
           <Casilla key={respuesta.numero} respuesta={respuesta} />
         ))}
       </ol>
       <div className="flex flex-wrap items-center justify-center gap-10">
         <Tachas tachas={ronda.tachas} maximas={ronda.tachasMaximas} />
+        <SobreposicionTachas tachas={ronda.tachas} maximas={ronda.tachasMaximas} />
         <p className="text-4xl font-bold text-amber-300 md:text-5xl">
-          {`Puntos en juego: ${String(ronda.bolsa)}`}
+          <span className="sr-only">{`Puntos en juego: ${String(ronda.bolsa)}`}</span>
+          <span aria-hidden="true">
+            Puntos en juego: <NumeroAnimado valor={ronda.bolsa} className="tabular-nums" />
+          </span>
         </p>
       </div>
       {mensaje !== null && (

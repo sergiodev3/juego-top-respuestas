@@ -1,6 +1,8 @@
 import type { VistaTablero } from '@/engine';
 import { cx } from '@/shared/utils/cx';
 
+import { NumeroAnimado } from './NumeroAnimado';
+
 interface MarcadorProps {
   vista: VistaTablero;
 }
@@ -36,9 +38,11 @@ export function Marcador({ vista }: MarcadorProps) {
             )}
           >
             <span className="text-3xl font-bold md:text-4xl">{equipo.nombre}</span>
-            <span className="text-5xl font-extrabold tabular-nums md:text-7xl">
-              {equipo.puntaje}
-            </span>
+            <span className="sr-only">{`${String(equipo.puntaje)} puntos`}</span>
+            <NumeroAnimado
+              valor={equipo.puntaje}
+              className="text-5xl font-extrabold tabular-nums md:text-7xl"
+            />
             {etiqueta !== null && (
               <span className="mt-1 rounded-full bg-amber-300 px-4 py-1 text-xl font-bold text-slate-950 md:text-2xl">
                 {etiqueta}

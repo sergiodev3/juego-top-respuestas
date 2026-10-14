@@ -1,3 +1,5 @@
+import { MotionConfig } from 'motion/react';
+
 import type { VistaTablero } from '@/engine';
 import type { EstadoTablero, Temporizador } from '@/shared/sync';
 
@@ -51,24 +53,32 @@ function Contenido({
     );
   }
   if (vista.ronda !== null) {
-    return <TableroRonda vista={vista} ronda={vista.ronda} />;
+    // A new round (or undoing back into an earlier one) mounts fresh, so its revealed answers
+    // and strikes show as they are instead of animating.
+    return <TableroRonda key={vista.ronda.numero} vista={vista} ronda={vista.ronda} />;
   }
   return <PantallaEspera nombre={vista.nombreJuego} />;
 }
 
-/** Presentational board: renders only what the projection carries. */
+/**
+ * Presentational board: renders only what the projection carries. Animations (reveal flips,
+ * strike overlay, count-ups) honor `prefers-reduced-motion`.
+ */
 export function PantallaTablero({ estado }: PantallaTableroProps) {
   if (estado.tipo !== 'partida') {
     return <PantallaEspera nombre="Top Respuestas" />;
   }
   const { vista, temporizador } = estado;
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-center text-4xl font-extrabold tracking-tight text-amber-300 md:text-5xl">
-        {vista.nombreJuego}
-      </h1>
-      <Contenido vista={vista} temporizador={temporizador} />
-      <Marcador vista={vista} />
-    </div>
+    // "user": with reduced motion, transform animations (the flips) jump to their end state.
+    <MotionConfig reducedMotion="user">
+      <div className="flex flex-1 flex-col gap-6">
+        <h1 className="text-center text-4xl font-extrabold tracking-tight text-amber-300 md:text-5xl">
+          {vista.nombreJuego}
+        </h1>
+        <Contenido vista={vista} temporizador={temporizador} />
+        <Marcador vista={vista} />
+      </div>
+    </MotionConfig>
   );
 }
