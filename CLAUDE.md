@@ -13,6 +13,7 @@ Local-first classroom survey game in the style of "100 Mexicanos Dijeron" / Fami
 | `npm run lint`                            | ESLint, zero warnings allowed                              |
 | `npm run format` / `npm run format:check` | Prettier write / check                                     |
 | `npm run test` / `npm run test:watch`     | Vitest (`src/**/*.test.ts(x)`, node env by default)        |
+| `npm run test:coverage`                   | Vitest with v8 coverage; thresholds gate `src/engine/**`   |
 | `npm run icons`                           | Regenerate PWA PNG icons from `public/favicon.svg` (sharp) |
 
 Run `typecheck`, `lint`, `format:check`, and `test` before every commit.
@@ -77,6 +78,13 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - **SheetJS install**: from the official CDN tarball, not the npm registry (the registry copy is stale). Current: `npm i --save https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`. To upgrade, check the latest version at https://cdn.sheetjs.com/ (list: `https://cdn.sheetjs.com/xlsx.lst`) and rerun the same command with the new version.
 - **Juego** (`src/shared/modelo/juego.ts`): `equipos` (2-4, `{ id, nombre, color }`), `reglas` (`tachasMaximas`, `rondaFinal { activa, preguntaIds, segundos: [20, 25], meta: 200 }`), `rondas` (`{ preguntaId, multiplicador: 1 | 2 | 3 }`). `crearJuegoPorDefecto({ nombre, preguntaIds })` is pure: "Equipo A"/"Equipo B" (`COLORES_EQUIPOS`, AA contrast with white text), 3 strikes, the first 4 questions as rounds in order (x2 and x3 on rounds 3 and 4 only when there are exactly 4 rounds, otherwise all x1), final round off.
 - **Import writes**: `repositorios.importacion.importarPreguntas(destino, preguntas)` and `importarYJugar(datosSet, preguntas)` validate everything first and write the set, questions (file order kept via `creadoEn` offsets) and the default game in one Dexie transaction. The UI keeps the parsed preview when a write fails. "Importar y jugar" navigates to `rutaConfigurarJuego(juegoId)` (`/juego/configurar/:juegoId`), which shows a read-only summary until Fase 4.
+
+## Game engine (Fase 3)
+
+- **Pure and event-sourced** (`src/engine`, import from `@/engine`): `reducir(config, eventos)` replays a log from `crearEstadoInicial(config)`; `validar` returns `{ ok: true } | { ok: false, codigo, motivo }` (stable code + Spanish message) for enabling panel actions; `aplicar` throws `EventoRechazadoError` on invalid events; `deshacer(eventos)` drops the last event; `proyectarTablero(config, estado)` is the only thing the board receives.
+- **Snapshot config**: `ConfigPartida` is engine-owned (teams by index 0-3, rounds with `PreguntaSnapshot` + multiplier, `tachasMaximas`, optional final round with exactly 5 questions). The engine never imports `@/shared/modelo`; Fase 4 maps `Juego` + questions into it.
+- **Replay never throws** on a bad stored event: it is skipped and listed in `estado.advertencias` (`{ indice, codigo, motivo }`).
+- Rules source of truth: "Rules specification" in `odd/tasks/fase-3-motor.md`; overview, phase diagram and event table in `src/engine/README.md`. `npm run test:coverage` gates `src/engine/**` (lines/statements/functions >= 95%, branches >= 90%).
 
 ## Testing
 

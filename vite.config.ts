@@ -52,5 +52,16 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['src/test/setup.ts'],
+    // jsdom + user-event tests can exceed 5 s on a loaded machine (e.g. under coverage).
+    testTimeout: 15_000,
+    coverage: {
+      // `npm run test:coverage` gates the pure game engine; other layers are not measured yet.
+      provider: 'v8',
+      include: ['src/engine/**/*.ts'],
+      exclude: ['src/engine/**/*.test.ts', 'src/engine/prueba/**', 'src/engine/index.ts'],
+      thresholds: {
+        'src/engine/**': { lines: 95, branches: 90, functions: 95, statements: 95 },
+      },
+    },
   },
 });
