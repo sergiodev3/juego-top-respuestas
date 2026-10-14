@@ -7,3 +7,6 @@ package-lock.json
 # Human-authored planning documents keep their own formatting.
 docs
 odd
+
+# Local, auto-generated agent tooling (untracked).
+.atl

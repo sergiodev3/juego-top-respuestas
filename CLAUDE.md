@@ -12,7 +12,7 @@ Local-first classroom survey game in the style of "100 Mexicanos Dijeron" / Fami
 | `npm run typecheck`                       | Type-check all TS project references                       |
 | `npm run lint`                            | ESLint, zero warnings allowed                              |
 | `npm run format` / `npm run format:check` | Prettier write / check                                     |
-| `npm run test` / `npm run test:watch`     | Vitest (node environment, `src/**/*.test.ts(x)`)           |
+| `npm run test` / `npm run test:watch`     | Vitest (`src/**/*.test.ts(x)`, node env by default)        |
 | `npm run icons`                           | Regenerate PWA PNG icons from `public/favicon.svg` (sharp) |
 
 Run `typecheck`, `lint`, `format:check`, and `test` before every commit.
@@ -36,6 +36,7 @@ src/
     sync/       BroadcastChannel panel <-> board messaging (Zod-validated)
     pantallas/  second-screen and fullscreen helpers
     sonido/     sound effects
+    modelo/     domain types + Zod schemas (Pregunta, Respuesta, SetPreguntas)
     utils/      small generic helpers
     rutas.ts    path constants (RUTAS), shared so features never import from app/
 ```
@@ -54,8 +55,25 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - **Final round**: adds the `RF_RESPUESTA` event; the timer lives in the UI, not the engine.
 - **Import synonyms** (`R1: auto, coche; R3: celular`) are mapped to their answers before answers are sorted by points.
 - **Projector fullscreen** needs one click inside the board window (browser restriction). Window Management API (`getScreenDetails`) only on Chromium; fallback is `window.open` plus instructions.
-- **Dependencies arrive in the phase that first needs them** (Dexie, Zustand, Zod, PapaParse, Framer Motion, Howler). SheetJS is installed from the official CDN tarball (`cdn.sheetjs.com`), never from the npm registry.
+- **Dependencies arrive in the phase that first needs them** (Dexie and Zod since Fase 1; Zustand, PapaParse, Framer Motion, Howler later). SheetJS is installed from the official CDN tarball (`cdn.sheetjs.com`), never from the npm registry.
 - **Deploy**: static site on Vercel; `vercel.json` rewrites every path to `/index.html` (real files win by filesystem precedence).
+
+## Data layer (Fase 1)
+
+- **Model** (`src/shared/modelo`): Zod schemas are the source of truth; types come from `z.output`. `esquemaDatos*` schemas validate editable input and normalize it (trim, drop blank answer rows, sort answers by points desc via `ordenarRespuestas`, stable on ties). Validation messages are user-facing Spanish. Limits: 1-8 answers, answer text 1-80 chars, points integer >= 0.
+- **Dexie schema** (`src/db/baseDatos.ts`): tables `sets`, `preguntas` (indexed by `setId`, `tema`), `juegos`, `partidas`, and `meta` (key `clave`). `juegos`/`partidas` only have placeholder types until Fase 4.
+- **Records**: IDs from `crypto.randomUUID()`; `creadoEn`, `actualizadoEn`, `eliminadoEn` are epoch milliseconds. Every write sets `actualizadoEn`.
+- **Soft delete**: delete sets `eliminadoEn` (tombstone for future sync); reads hide those rows. IndexedDB cannot index `null`, so filter `eliminadoEn === null` in code. Deleting a set soft-deletes its questions in the same transaction.
+- **Repositories**: features use the interfaces in `src/db/repositorios.ts` (`RepositorioSets`, `RepositorioPreguntas`), never Dexie. `crearRepositoriosDexie(db, { ahora, generarId })` implements them; writes re-validate with the schemas. React gets them from `RepositoriosProvider` (defaults to the app instance in `src/db/instancia.ts`) via `useRepositorios()`; read with `useLiveQuery(() => repositorios.x.y(...), deps)`. Repository reads must only await Dexie calls so `liveQuery` keeps tracking them.
+- **Startup** (`src/app/main.tsx`): `solicitarAlmacenamientoPersistente()` (never throws) and `aplicarSemillaSiHaceFalta(baseDatos)`. The seed ("Cultura general escolar", 10 questions) runs once: the `semillaAplicada` flag in `meta` is written in the same transaction, so deleting the sample set never reseeds.
+- **Adding a schema version**: never edit a shipped `this.version(n)` block. Add `this.version(n + 1).stores({ changed tables only })` with an optional `.upgrade(tx => ...)` that migrates existing rows, below the previous version in the `BaseDatosTopRespuestas` constructor, and add a test that opens an older-version database and checks the migrated data.
+
+## Testing
+
+- Vitest runs in `node` by default. Component tests opt into jsdom with a `// @vitest-environment jsdom` docblock on the first line (Vitest 5 has no `environmentMatchGlobs`).
+- `src/test/setup.ts` installs `fake-indexeddb/auto` before any module loads Dexie (Dexie captures the globals on import and `liveQuery` needs them), registers jest-dom matchers, and in jsdom adds Testing Library cleanup plus a `<dialog>` `showModal`/`close` shim (jsdom lacks them).
+- Use `crearEntornoPrueba()` (`src/test/baseDatosPrueba.ts`) for a fresh, isolated database per test with a deterministic clock (`reloj.avanzar`) and sequential ids (`id-1`, `id-2`, ...). Close it in `afterEach`.
+- Test repositories through their interface; inject `entorno.repositorios` into `RepositoriosProvider` for view tests.
 
 ## Conventions
 
@@ -73,3 +91,5 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - React Router is on v7: v8 requires Node `>=22.22`, and the local runtime is Node 22.18. Use `react-router` (not `react-router-dom`), `createBrowserRouter`, and `RouterProvider` from `react-router/dom`.
 - Tailwind v4 via `@tailwindcss/vite`; styles start with `@import 'tailwindcss'` in `src/app/index.css`.
 - The service worker (vite-plugin-pwa, `autoUpdate`) precaches js/css/html/svg/png/woff2/mp3/ogg and falls back to `/index.html` for navigations.
+- Zod is v4: customize messages with `{ error: '...' }`. React 19.3 types deprecate `FormEvent`; use `SubmitEvent<HTMLFormElement>` for form submit handlers.
+- Confirmations use `DialogoConfirmacion` (`src/shared/ui`, native `<dialog>`), never `window.confirm`/`alert`.
