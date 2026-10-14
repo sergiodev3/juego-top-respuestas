@@ -30,7 +30,7 @@ One row per question: `Tema | Pregunta | R1 | Pts1 | … | R8 | Pts8 | Sinónimo
 
 - [x] T2.1 Import domain (pure, test-first): matrix → validated rows with exact Spanish reasons, synonyms mapping, sorting, header mapping, encoding detection, CSV/XLSX readers, template generation; `Juego` model + defaults + `RepositorioJuegos` (route: delegated writer — 2+ non-trivial files) — commit `0605265`
 - [x] T2.2 Import UI: templates download, drag-and-drop, preview (valid/invalid with reasons, warnings), choose target set, import, "Importar y jugar" → Configurar juego summary (route: same delegated writer) — commit `53e2fd6`
-- [ ] T2.3 Verify (typecheck, lint, format:check, test, build), work-unit commits, RDD assessment
+- [x] T2.3 Verify (typecheck, lint, format:check, test, build), work-unit commits, RDD assessment
 
 ## Acceptance criteria
 
@@ -54,10 +54,15 @@ Runner: Vitest (node env for domain, jsdom for UI). RED → GREEN for parsing/va
 - Writer decisions: file-level errors returned as `{ok:false}`; synonym errors block the row; import service lives in db layer (single Dexie transaction); "Importar y jugar" always creates a new set; preview replaced by success message with link to set.
 - Note: last reviewed boundary is b95e679 (review covered af606b2..b95e679); 4e97fcd (docs only) is part of this slice.
 
+- [x] T2.3 RDD: assess `b95e679..HEAD` medium (`slice_budget_reached`, 40 files / 2986 lines); user granted; review-reliability approved; acknowledged (lineage review-a79d97002251620f, burned). Reviewed boundary advances to the `docs(odd): track fase 2 progress` commit.
+
 ## Follow-ups
 
 - Main chunk >500 kB (pre-existing): consider route-level code splitting in Fase 5/7.
+- R3-lectura-archivo-carrera (WARNING): overlapping file reads — hidden input still accepts a file while busy; a slower earlier read can overwrite a later preview. Guard with a read token/ignore stale results.
+- R3-importar-ocupado-sin-reset (WARNING): after a successful "Importar y jugar" the panel stays busy relying on navigation; reset busy state in a `finally`.
+- R3-creadoen-offsets-colision (SUGGESTION): question order relies on `creadoEn + indice`; consider an explicit `orden` field if ordering matters.
 
 ## Next step
 
-RDD assessment over `b95e679..HEAD`, then user approval before Fase 3.
+User approval before Fase 3 (game engine, pure TS, full tests).
