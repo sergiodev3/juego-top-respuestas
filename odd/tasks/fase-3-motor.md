@@ -79,7 +79,7 @@ Only what the students may see: game name, phase, round number/total, multiplier
 
 - [x] T3.1 Types + face-off + en juego + robo + fin de ronda + adjustments + terminate + undo + validation + replay with warnings (route: delegated writer — 2+ non-trivial files; test-first)
 - [x] T3.2 Final round + board projection + coverage threshold for `src/engine` (lines ≥ 95%, branches ≥ 90%) (route: same delegated writer; test-first)
-- [ ] T3.3 Verify (typecheck, lint incl. engine import restrictions, format:check, test, coverage), work-unit commits, RDD
+- [x] T3.3 Verify (typecheck, lint incl. engine import restrictions, format:check, test, coverage), work-unit commits, RDD
 
 ## Acceptance criteria
 
@@ -101,6 +101,13 @@ Runner: Vitest (node env). RED → GREEN per rule group.
 - Work units: T3.1 and T3.2 share `tipos.ts`, `index.ts`, `motor.ts`, `finDeRonda.ts → rondaFinal.ts`, so they are committed as one engine commit.
 - Writer "spec questions" resolved conservatively (documented in `src/engine/README.md`): `TERMINAR_JUEGO` in final round → result null; `RF_RESPUESTA` only by the player in turn; correcting a revealed final answer hides it again; player 1 reveals stay hidden on the board while player 2 plays; `REVELAR_TODAS` rejected when nothing is hidden; `validarConfig` requires sorted answers; final-round board shows what the player said.
 
+- [x] T3.3 commit `a734ed1`; RDD medium (`slice_budget_reached`, 32 files / 3345 lines); user granted; review-reliability approved; acknowledged (lineage review-002fdf8f8cb2a45f). Reviewed boundary → `a734ed1`.
+
+## Follow-ups (advisory; propose folding into the start of Fase 4)
+
+- (W) `reducir` calls `crearEstadoInicial`, which throws on an invalid config — contradicts "replay never throws"; return a recoverable result (or validate the snapshot at load) and test it.
+- (W) Runtime event-shape guard only checks `tipo`; malformed fields of known events reach rule code. Validate stored events with a Zod schema at the persistence boundary (Fase 4 already needs Zod schemas for events/messages) and add replay tests for malformed shapes.
+
 ## Next step
 
-Commit + RDD, then user approval before Fase 4.
+User approval before Fase 4 (game config + conductor panel + synced board + second screen).
