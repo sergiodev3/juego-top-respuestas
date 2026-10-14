@@ -4,12 +4,13 @@ import { Link, useNavigate } from 'react-router';
 
 import { useRepositorios } from '@/db/contextoRepositorios';
 import type { DatosSet, SetPreguntas } from '@/shared/modelo';
-import { rutaSetBanco } from '@/shared/rutas';
+import { RUTAS, rutaSetBanco } from '@/shared/rutas';
 import { AvisoError } from '@/shared/ui/AvisoError';
 import {
   CLASE_BOTON_ACCION,
   CLASE_BOTON_ACCION_PELIGRO,
   CLASE_BOTON_PRIMARIO,
+  CLASE_BOTON_SECUNDARIO,
   CLASE_CAMPO,
   CLASE_ETIQUETA,
 } from '@/shared/ui/clases';
@@ -80,15 +81,20 @@ export function VistaBanco() {
           </h1>
           <p className="text-slate-700">Organiza tus preguntas en sets por materia o grupo.</p>
         </div>
-        <button
-          type="button"
-          className={CLASE_BOTON_PRIMARIO}
-          onClick={() => {
-            setEdicion({ modo: 'crear' });
-          }}
-        >
-          Nuevo set
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link to={RUTAS.importar} className={CLASE_BOTON_SECUNDARIO}>
+            Importar preguntas
+          </Link>
+          <button
+            type="button"
+            className={CLASE_BOTON_PRIMARIO}
+            onClick={() => {
+              setEdicion({ modo: 'crear' });
+            }}
+          >
+            Nuevo set
+          </button>
+        </div>
       </header>
 
       {error && <AvisoError>{error}</AvisoError>}

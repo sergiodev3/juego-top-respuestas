@@ -36,7 +36,7 @@ src/
     sync/       BroadcastChannel panel <-> board messaging (Zod-validated)
     pantallas/  second-screen and fullscreen helpers
     sonido/     sound effects
-    modelo/     domain types + Zod schemas (Pregunta, Respuesta, SetPreguntas)
+    modelo/     domain types + Zod schemas (Pregunta, Respuesta, SetPreguntas, Juego)
     utils/      small generic helpers
     rutas.ts    path constants (RUTAS), shared so features never import from app/
 ```
@@ -55,18 +55,28 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - **Final round**: adds the `RF_RESPUESTA` event; the timer lives in the UI, not the engine.
 - **Import synonyms** (`R1: auto, coche; R3: celular`) are mapped to their answers before answers are sorted by points.
 - **Projector fullscreen** needs one click inside the board window (browser restriction). Window Management API (`getScreenDetails`) only on Chromium; fallback is `window.open` plus instructions.
-- **Dependencies arrive in the phase that first needs them** (Dexie and Zod since Fase 1; Zustand, PapaParse, Framer Motion, Howler later). SheetJS is installed from the official CDN tarball (`cdn.sheetjs.com`), never from the npm registry.
+- **Dependencies arrive in the phase that first needs them** (Dexie and Zod since Fase 1; SheetJS and PapaParse since Fase 2; Zustand, Framer Motion, Howler later). SheetJS is installed from the official CDN tarball (`cdn.sheetjs.com`), never from the npm registry.
 - **Deploy**: static site on Vercel; `vercel.json` rewrites every path to `/index.html` (real files win by filesystem precedence).
 
 ## Data layer (Fase 1)
 
 - **Model** (`src/shared/modelo`): Zod schemas are the source of truth; types come from `z.output`. `esquemaDatos*` schemas validate editable input and normalize it (trim, drop blank answer rows, sort answers by points desc via `ordenarRespuestas`, stable on ties). Validation messages are user-facing Spanish. Limits: 1-8 answers, answer text 1-80 chars, points integer >= 0.
-- **Dexie schema** (`src/db/baseDatos.ts`): tables `sets`, `preguntas` (indexed by `setId`, `tema`), `juegos`, `partidas`, and `meta` (key `clave`). `juegos`/`partidas` only have placeholder types until Fase 4.
+- **Dexie schema** (`src/db/baseDatos.ts`): tables `sets`, `preguntas` (indexed by `setId`, `tema`), `juegos` (typed as `Juego` since Fase 2), `partidas`, and `meta` (key `clave`). `partidas` only has a placeholder type until Fase 4.
 - **Records**: IDs from `crypto.randomUUID()`; `creadoEn`, `actualizadoEn`, `eliminadoEn` are epoch milliseconds. Every write sets `actualizadoEn`.
 - **Soft delete**: delete sets `eliminadoEn` (tombstone for future sync); reads hide those rows. IndexedDB cannot index `null`, so filter `eliminadoEn === null` in code. Deleting a set soft-deletes its questions in the same transaction.
-- **Repositories**: features use the interfaces in `src/db/repositorios.ts` (`RepositorioSets`, `RepositorioPreguntas`), never Dexie. `crearRepositoriosDexie(db, { ahora, generarId })` implements them; writes re-validate with the schemas. React gets them from `RepositoriosProvider` (defaults to the app instance in `src/db/instancia.ts`) via `useRepositorios()`; read with `useLiveQuery(() => repositorios.x.y(...), deps)`. Repository reads must only await Dexie calls so `liveQuery` keeps tracking them.
+- **Repositories**: features use the interfaces in `src/db/repositorios.ts` (`RepositorioSets`, `RepositorioPreguntas`, `RepositorioJuegos`, `ServicioImportacion`), never Dexie. `crearRepositoriosDexie(db, { ahora, generarId })` implements them; writes re-validate with the schemas. React gets them from `RepositoriosProvider` (defaults to the app instance in `src/db/instancia.ts`) via `useRepositorios()`; read with `useLiveQuery(() => repositorios.x.y(...), deps)`. Repository reads must only await Dexie calls so `liveQuery` keeps tracking them.
 - **Startup** (`src/app/main.tsx`): `solicitarAlmacenamientoPersistente()` (never throws) and `aplicarSemillaSiHaceFalta(baseDatos)`. The seed ("Cultura general escolar", 10 questions) runs once: the `semillaAplicada` flag in `meta` is written in the same transaction, so deleting the sample set never reseeds.
 - **Adding a schema version**: never edit a shipped `this.version(n)` block. Add `this.version(n + 1).stores({ changed tables only })` with an optional `.upgrade(tx => ...)` that migrates existing rows, below the previous version in the `BaseDatosTopRespuestas` constructor, and add a test that opens an older-version database and checks the migrated data.
+
+## Import and games (Fase 2)
+
+- **Format**: one row per question, `Tema | Pregunta | R1 | Pts1 | … | R8 | Pts8 | Sinónimos`, synonyms as `R1: auto, coche; R3: celular`. Headers match ignoring case, accents and spaces (`Pts1` or `Puntos1`, `Sinónimos` or `Sinonimos`); column order is free and unknown columns are ignored. A missing `Pregunta` column or no `R1`-`R8` column fails the whole file.
+- **Pure domain** (`src/features/importar/dominio`, no React or Dexie): `leerArchivo(nombre, bytes)` -> raw matrix -> `validarFilas(matriz)` -> rows with `numeroFila` (Excel row, header = first non-empty row), `estado`, exact Spanish `errores` (block the row) and `advertencias` (duplicates; never block). Empty rows are skipped. Valid rows reuse `esquemaDatosPregunta`, so imports obey the bank rules; synonyms attach to their answer before sorting by points. `marcarDuplicadosEnSet` adds the target-set duplicate warning.
+- **CSV encoding**: strict UTF-8 first (`TextDecoder('utf-8', { fatal: true })`, BOM stripped), falling back to `windows-1252` (Excel on Windows). PapaParse auto-detects `,` or `;`. Templates are generated client-side (offline); the CSV template is UTF-8 with a BOM so Excel shows accents. Round-trip tests keep both templates importable with zero errors.
+- **Lazy loading**: SheetJS and PapaParse are only reached through `await import('xlsx')` / `await import('papaparse')` inside the readers and template generators, so they build as separate chunks (still precached by the service worker). Never import them statically from app code; tests may.
+- **SheetJS install**: from the official CDN tarball, not the npm registry (the registry copy is stale). Current: `npm i --save https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`. To upgrade, check the latest version at https://cdn.sheetjs.com/ (list: `https://cdn.sheetjs.com/xlsx.lst`) and rerun the same command with the new version.
+- **Juego** (`src/shared/modelo/juego.ts`): `equipos` (2-4, `{ id, nombre, color }`), `reglas` (`tachasMaximas`, `rondaFinal { activa, preguntaIds, segundos: [20, 25], meta: 200 }`), `rondas` (`{ preguntaId, multiplicador: 1 | 2 | 3 }`). `crearJuegoPorDefecto({ nombre, preguntaIds })` is pure: "Equipo A"/"Equipo B" (`COLORES_EQUIPOS`, AA contrast with white text), 3 strikes, the first 4 questions as rounds in order (x2 and x3 on rounds 3 and 4 only when there are exactly 4 rounds, otherwise all x1), final round off.
+- **Import writes**: `repositorios.importacion.importarPreguntas(destino, preguntas)` and `importarYJugar(datosSet, preguntas)` validate everything first and write the set, questions (file order kept via `creadoEn` offsets) and the default game in one Dexie transaction. The UI keeps the parsed preview when a write fails. "Importar y jugar" navigates to `rutaConfigurarJuego(juegoId)` (`/juego/configurar/:juegoId`), which shows a read-only summary until Fase 4.
 
 ## Testing
 

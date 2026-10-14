@@ -12,6 +12,7 @@ export const RUTAS = {
   bancoPregunta: '/banco/:setId/preguntas/:preguntaId',
   importar: '/importar',
   configurarJuego: '/juego/configurar',
+  configurarJuegoGuardado: '/juego/configurar/:juegoId',
   panel: '/juego/panel',
   tablero: '/tablero',
   impresion: '/impresion',
@@ -28,6 +29,11 @@ export function rutaSetBanco(setId: string): string {
 /** `/banco/:setId/preguntas/nueva` */
 export function rutaPreguntaNueva(setId: string): string {
   return generatePath(RUTAS.bancoPreguntaNueva, { setId });
+}
+
+/** `/juego/configurar/:juegoId` */
+export function rutaConfigurarJuego(juegoId: string): string {
+  return generatePath(RUTAS.configurarJuegoGuardado, { juegoId });
 }
 
 /** `/banco/:setId/preguntas/:preguntaId` */
