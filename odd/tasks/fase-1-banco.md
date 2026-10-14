@@ -25,7 +25,7 @@ Every later phase (import, game config, engine snapshots, backups) reads and wri
 
 - [x] T1.1 Data layer: model + Zod, Dexie schema v1, repositories, storage persist, seed — test-first with fake-indexeddb (route: delegated writer — 2+ non-trivial files) — commit `f95dcef`
 - [x] T1.2 Bank UI: sets list/create/edit/delete/duplicate, set detail with questions CRUD, answers editor (≤8, auto-sorted, synonyms), search + topic filter, duplicate question, confirmations (route: delegated writer, same worker) — commit `477ad5a` (+ `f710d2a` chore: ignore `.atl/`)
-- [ ] T1.3 Verify (typecheck, lint, format:check, test, build), work-unit commits, RDD assessment
+- [x] T1.3 Verify (typecheck, lint, format:check, test, build), work-unit commits, RDD assessment
 
 ## Acceptance criteria
 
@@ -49,6 +49,13 @@ Runner: Vitest. RED → GREEN for repository behavior, seed idempotency, schema 
 - Writer decisions: fully blank answer rows dropped; empty tema allowed ("Sin tema"); repos re-validate input and throw `ErrorRegistroNoEncontrado`; duplicated sets get " (copia)", questions don't; `<dialog>` stubbed in jsdom setup; per-file `// @vitest-environment jsdom`.
 - Incident: `npm run format` reformatted untracked `.atl/skill-registry.md`; fixed by adding `.atl` to `.prettierignore` and regenerating the registry (which also added `.atl/` to `.gitignore`).
 
+- T1.3 RDD: assess `af606b2..HEAD` medium (`slice_budget_reached`, 42 files / 3854 lines); user granted; review-reliability approved; acknowledged (lineage review-8dce6a36d34213f1, burned). Reviewed boundary advances to the `docs(odd): track fase 1 progress` commit.
+
+## Follow-ups (advisory, non-blocking)
+
+- R3-semilla-race-strictmode: seed failure is only logged; show a friendly Spanish notice on Inicio/Banco if seeding or DB open fails (fold into Fase 7 error-handling pass or earlier).
+- R3-eliminar-pregunta-no-tests: add view-level tests for VistaBanco (create/edit/duplicate/delete confirmation) and VistaEditorPregunta save-error path.
+
 ## Next step
 
-RDD assessment over `af606b2..HEAD`, then user approval before Fase 2.
+User approval before Fase 2 (import .xlsx/.csv with templates, preview and validation).
