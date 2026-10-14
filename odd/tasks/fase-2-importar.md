@@ -32,6 +32,13 @@ One row per question: `Tema | Pregunta | R1 | Pts1 | … | R8 | Pts8 | Sinónimo
 - [x] T2.2 Import UI: templates download, drag-and-drop, preview (valid/invalid with reasons, warnings), choose target set, import, "Importar y jugar" → Configurar juego summary (route: same delegated writer) — commit `53e2fd6`
 - [x] T2.3 Verify (typecheck, lint, format:check, test, build), work-unit commits, RDD assessment
 
+- [x] T2.4 User feedback + review warnings: "Cancelar" button in the preview that discards the parsed file and returns to the drop zone (resets the file input so the same corrected file can be re-selected); stale-read guard so only the latest file wins and the old preview is hidden while reading; reset busy state after "Importar y jugar" (route: delegated writer — 2+ non-trivial files; test-first)
+
+## User feedback (2026-10-14)
+
+- Manual test OK: .xlsx and .csv import, "Importar y jugar" lands on Configurar juego with teams and rules.
+- Request: a cancel button so uploading a corrected file doesn't show the previous file's error preview (confusing when loading files back to back) → T2.4.
+
 ## Acceptance criteria
 
 - Downloaded templates re-import with zero errors (round-trip test for both formats).
@@ -63,6 +70,8 @@ Runner: Vitest (node env for domain, jsdom for UI). RED → GREEN for parsing/va
 - R3-importar-ocupado-sin-reset (WARNING): after a successful "Importar y jugar" the panel stays busy relying on navigation; reset busy state in a `finally`.
 - R3-creadoen-offsets-colision (SUGGESTION): question order relies on `creadoEn + indice`; consider an explicit `orden` field if ordering matters.
 
+- T2.4: RED 8 of 20 failing (cancel missing, focus, overlapping reads, busy stays disabled) → GREEN; writer: typecheck 0, lint 0, format clean, test 20 files / 133 passed, build OK. Parent spot check: 133 passed, lint 0. Decisions: drop zone hidden while a preview/file error is shown, "Cancelar" (disabled during import) and "Importar otro archivo" share one `reiniciar()`, focus returns to "Elegir archivo"; read counter ignores stale reads; "Importar y jugar" awaits navigation and resets busy in `finally`. R3-lectura-archivo-carrera and R3-importar-ocupado-sin-reset resolved.
+
 ## Next step
 
-User approval before Fase 3 (game engine, pure TS, full tests).
+Commit T2.4 + RDD, then Fase 3 (game engine, pure TS, full tests) — already approved by the user.

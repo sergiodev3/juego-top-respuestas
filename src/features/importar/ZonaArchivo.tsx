@@ -1,20 +1,24 @@
-import { useRef, useState, type DragEvent } from 'react';
+import { useRef, useState, type DragEvent, type Ref } from 'react';
 
 import { cx } from '@/shared/utils/cx';
 import { CLASE_BOTON_PRIMARIO } from '@/shared/ui/clases';
 
 import { EXTENSIONES_ADMITIDAS } from './dominio';
+import { TEXTO_LEYENDO_ARCHIVO } from './textos';
 
 interface ZonaArchivoProps {
-  ocupado: boolean;
+  /** A file is being read; a new file may still be chosen and the latest one wins. */
+  leyendo: boolean;
   onArchivo: (archivo: File) => void;
+  /** Lets the parent move focus to "Elegir archivo" when the user starts over. */
+  refBotonElegir?: Ref<HTMLButtonElement>;
 }
 
 /**
  * Drop zone plus an "Elegir archivo" button. The hidden file input is driven by the button,
  * so keyboard users never depend on drag and drop.
  */
-export function ZonaArchivo({ ocupado, onArchivo }: ZonaArchivoProps) {
+export function ZonaArchivo({ leyendo, onArchivo, refBotonElegir }: ZonaArchivoProps) {
   const entrada = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
 
@@ -22,7 +26,7 @@ export function ZonaArchivo({ ocupado, onArchivo }: ZonaArchivoProps) {
     evento.preventDefault();
     setArrastrando(false);
     const archivo = evento.dataTransfer.files[0];
-    if (archivo && !ocupado) {
+    if (archivo) {
       onArchivo(archivo);
     }
   }
@@ -48,9 +52,9 @@ export function ZonaArchivo({ ocupado, onArchivo }: ZonaArchivoProps) {
         Formatos admitidos: {EXTENSIONES_ADMITIDAS.join(', ')}. Se lee solo la primera hoja.
       </p>
       <button
+        ref={refBotonElegir}
         type="button"
         className={CLASE_BOTON_PRIMARIO}
-        disabled={ocupado}
         onClick={() => entrada.current?.click()}
       >
         Elegir archivo
@@ -71,11 +75,10 @@ export function ZonaArchivo({ ocupado, onArchivo }: ZonaArchivoProps) {
           }
         }}
       />
-      {ocupado && (
-        <p role="status" className="text-sm text-slate-700">
-          Leyendo archivo…
-        </p>
-      )}
+      {/* Kept mounted so screen readers announce the text when it appears. */}
+      <p role="status" aria-live="polite" className="text-sm text-slate-700">
+        {leyendo ? TEXTO_LEYENDO_ARCHIVO : ''}
+      </p>
     </div>
   );
 }

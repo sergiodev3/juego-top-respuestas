@@ -1,3 +1,8 @@
+export const TEXTO_CANCELAR = 'Cancelar';
+export const DESCRIPCION_CANCELAR = 'Descarta este archivo para que puedas elegir otro.';
+export const TEXTO_LEYENDO_ARCHIVO = 'Leyendo archivo…';
+export const TEXTO_IMPORTAR_OTRO = 'Importar otro archivo';
+
 function plural(cantidad: number, singular: string, plural: string): string {
   return `${String(cantidad)} ${cantidad === 1 ? singular : plural}`;
 }

@@ -17,13 +17,21 @@ import {
 
 import { marcarDuplicadosEnSet, type FilaValidada } from './dominio';
 import { TablaVistaPrevia } from './TablaVistaPrevia';
-import { textoPreguntas } from './textos';
+import {
+  DESCRIPCION_CANCELAR,
+  TEXTO_CANCELAR,
+  TEXTO_IMPORTAR_OTRO,
+  textoPreguntas,
+} from './textos';
 
 interface PanelImportacionProps {
   /** Original file name; the default name of a new set is derived from it. */
   nombreArchivo: string;
   filas: readonly FilaValidada[];
-  /** Lets the user start over with another file after a successful import. */
+  /**
+   * Discards this file and lets the user start over with another one: "Cancelar" in the preview
+   * and "Importar otro archivo" after a successful import.
+   */
   onReiniciar?: () => void;
 }
 
@@ -54,6 +62,32 @@ function mensajeDeError(error: unknown): string {
     return 'El set elegido ya no existe. Elige otro o crea un set nuevo.';
   }
   return 'No se pudieron guardar las preguntas. La vista previa sigue aquí; intenta de nuevo.';
+}
+
+interface BotonCancelarArchivoProps {
+  onCancelar: () => void;
+  disabled?: boolean;
+}
+
+/** "Cancelar": discards the current file so the user can choose another one. */
+export function BotonCancelarArchivo({ onCancelar, disabled = false }: BotonCancelarArchivoProps) {
+  const idDescripcion = useId();
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        className={CLASE_BOTON_SECUNDARIO}
+        disabled={disabled}
+        aria-describedby={idDescripcion}
+        onClick={onCancelar}
+      >
+        {TEXTO_CANCELAR}
+      </button>
+      <p id={idDescripcion} className="max-w-sm text-sm text-slate-600">
+        {DESCRIPCION_CANCELAR}
+      </p>
+    </div>
+  );
 }
 
 /** Target set choice, import actions and the preview of a parsed file. */
@@ -121,9 +155,12 @@ export function PanelImportacion({ nombreArchivo, filas, onReiniciar }: PanelImp
         { nombre: nombreParaJugar, materia: '', grupo: '' },
         preguntasValidas,
       );
-      void navigate(rutaConfigurarJuego(juego.id));
+      // Waiting for the navigation keeps the buttons disabled until it settles, so a second
+      // click cannot create a duplicate game. React 19 ignores the reset if this unmounted.
+      await navigate(rutaConfigurarJuego(juego.id));
     } catch (causa) {
       setError(mensajeDeError(causa));
+    } finally {
       setOcupado(false);
     }
   }
@@ -143,7 +180,7 @@ export function PanelImportacion({ nombreArchivo, filas, onReiniciar }: PanelImp
           </Link>
           {onReiniciar && (
             <button type="button" className={CLASE_BOTON_SECUNDARIO} onClick={onReiniciar}>
-              Importar otro archivo
+              {TEXTO_IMPORTAR_OTRO}
             </button>
           )}
         </div>
@@ -260,6 +297,7 @@ export function PanelImportacion({ nombreArchivo, filas, onReiniciar }: PanelImp
               y hasta 4 rondas.
             </p>
           </div>
+          {onReiniciar && <BotonCancelarArchivo disabled={ocupado} onCancelar={onReiniciar} />}
         </div>
         {cantidadValidas < filas.length && cantidadValidas > 0 && (
           <p className="text-sm text-slate-700">

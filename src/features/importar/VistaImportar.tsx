@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import { RUTAS } from '@/shared/rutas';
@@ -16,13 +16,13 @@ import {
   validarFilas,
   type FilaValidada,
 } from './dominio';
-import { PanelImportacion } from './PanelImportacion';
+import { BotonCancelarArchivo, PanelImportacion } from './PanelImportacion';
 import { ZonaArchivo } from './ZonaArchivo';
 
 interface ArchivoLeido {
   nombre: string;
   filas: FilaValidada[];
-  /** Changes on every read so the panel resets its state for a new file. */
+  /** Number of the read that produced it; a new file always gets a fresh panel. */
   version: number;
 }
 
@@ -36,31 +36,59 @@ export function VistaImportar() {
   const [errorPlantilla, setErrorPlantilla] = useState<string | null>(null);
   const [archivo, setArchivo] = useState<ArchivoLeido | null>(null);
 
+  // Every read (and every reset) takes a new number; only the latest read may show its result.
+  const lecturaActual = useRef(0);
+  // Set when the user starts over, so "Elegir archivo" gets focus once it is shown again.
+  const enfocarAlVolver = useRef(false);
+
+  const enfocarBotonElegir = useCallback((boton: HTMLButtonElement | null) => {
+    if (boton && enfocarAlVolver.current) {
+      enfocarAlVolver.current = false;
+      boton.focus();
+    }
+  }, []);
+
   async function leer(seleccionado: File) {
+    lecturaActual.current += 1;
+    const lectura = lecturaActual.current;
+    setArchivo(null);
     setErrorArchivo(null);
     setLeyendo(true);
     try {
       const matriz = await leerArchivo(seleccionado.name, await seleccionado.arrayBuffer());
+      if (lectura !== lecturaActual.current) {
+        return;
+      }
       const resultado = validarFilas(matriz);
       if (resultado.ok) {
-        setArchivo((anterior) => ({
-          nombre: seleccionado.name,
-          filas: resultado.filas,
-          version: (anterior?.version ?? 0) + 1,
-        }));
+        setArchivo({ nombre: seleccionado.name, filas: resultado.filas, version: lectura });
       } else {
-        setArchivo(null);
         setErrorArchivo(`«${seleccionado.name}»: ${resultado.error}`);
       }
     } catch (causa) {
-      setArchivo(null);
+      if (lectura !== lecturaActual.current) {
+        return;
+      }
       setErrorArchivo(
         causa instanceof ErrorLecturaArchivo ? causa.message : ERROR_LECTURA_GENERICO,
       );
     } finally {
-      setLeyendo(false);
+      if (lectura === lecturaActual.current) {
+        setLeyendo(false);
+      }
     }
   }
+
+  /** Discards the current file (and any read in flight) and shows the drop zone again. */
+  function reiniciar() {
+    lecturaActual.current += 1;
+    enfocarAlVolver.current = true;
+    setArchivo(null);
+    setErrorArchivo(null);
+    setLeyendo(false);
+  }
+
+  const hayResultado = archivo !== null || errorArchivo !== null;
 
   async function descargarPlantilla(formato: 'xlsx' | 'csv') {
     setErrorPlantilla(null);
@@ -91,53 +119,65 @@ export function VistaImportar() {
         </p>
       </header>
 
-      <section
-        aria-labelledby="titulo-plantillas"
-        className="space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm"
-      >
-        <h2 id="titulo-plantillas" className="text-xl font-semibold">
-          1. Descarga una plantilla
-        </h2>
-        <p className="text-sm text-slate-700">
-          Columnas: Tema, Pregunta, R1 y Pts1 hasta R8 y Pts8, y Sinónimos con el formato{' '}
-          <code className="rounded bg-slate-100 px-1">R1: auto, coche; R3: celular</code>. Las
-          respuestas se ordenan por puntos automáticamente.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={CLASE_BOTON_SECUNDARIO}
-            onClick={() => void descargarPlantilla('xlsx')}
-          >
-            Descargar plantilla .xlsx
-          </button>
-          <button
-            type="button"
-            className={CLASE_BOTON_SECUNDARIO}
-            onClick={() => void descargarPlantilla('csv')}
-          >
-            Descargar plantilla .csv
-          </button>
-        </div>
-        {errorPlantilla && <AvisoError>{errorPlantilla}</AvisoError>}
-      </section>
+      {!hayResultado && (
+        <section
+          aria-labelledby="titulo-plantillas"
+          className="space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm"
+        >
+          <h2 id="titulo-plantillas" className="text-xl font-semibold">
+            1. Descarga una plantilla
+          </h2>
+          <p className="text-sm text-slate-700">
+            Columnas: Tema, Pregunta, R1 y Pts1 hasta R8 y Pts8, y Sinónimos con el formato{' '}
+            <code className="rounded bg-slate-100 px-1">R1: auto, coche; R3: celular</code>. Las
+            respuestas se ordenan por puntos automáticamente.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={CLASE_BOTON_SECUNDARIO}
+              onClick={() => void descargarPlantilla('xlsx')}
+            >
+              Descargar plantilla .xlsx
+            </button>
+            <button
+              type="button"
+              className={CLASE_BOTON_SECUNDARIO}
+              onClick={() => void descargarPlantilla('csv')}
+            >
+              Descargar plantilla .csv
+            </button>
+          </div>
+          {errorPlantilla && <AvisoError>{errorPlantilla}</AvisoError>}
+        </section>
+      )}
 
-      <section aria-labelledby="titulo-archivo" className="space-y-3">
-        <h2 id="titulo-archivo" className="text-xl font-semibold">
-          2. Carga tu archivo
-        </h2>
-        <ZonaArchivo ocupado={leyendo} onArchivo={(elegido) => void leer(elegido)} />
-        {errorArchivo && <AvisoError>{errorArchivo}</AvisoError>}
-      </section>
+      {!archivo && (
+        <section aria-labelledby="titulo-archivo" className="space-y-3">
+          <h2 id="titulo-archivo" className="text-xl font-semibold">
+            2. Carga tu archivo
+          </h2>
+          {errorArchivo ? (
+            <>
+              <AvisoError>{errorArchivo}</AvisoError>
+              <BotonCancelarArchivo onCancelar={reiniciar} />
+            </>
+          ) : (
+            <ZonaArchivo
+              leyendo={leyendo}
+              onArchivo={(elegido) => void leer(elegido)}
+              refBotonElegir={enfocarBotonElegir}
+            />
+          )}
+        </section>
+      )}
 
       {archivo && (
         <PanelImportacion
           key={archivo.version}
           nombreArchivo={archivo.nombre}
           filas={archivo.filas}
-          onReiniciar={() => {
-            setArchivo(null);
-          }}
+          onReiniciar={reiniciar}
         />
       )}
     </section>

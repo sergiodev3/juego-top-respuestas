@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createMemoryRouter, Outlet, RouterProvider } from 'react-router';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RepositoriosProvider } from '@/db/RepositoriosProvider';
 import { aplicarSemillaSiHaceFalta } from '@/db/semilla';
@@ -35,6 +35,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   entorno.db.close();
 });
 
@@ -148,5 +149,117 @@ describe('PanelImportacion', () => {
     expect(await screen.findByText('Menciona un planeta del sistema solar')).toBeInTheDocument();
     expect(screen.getByText('Equipo A')).toBeInTheDocument();
     expect(screen.getByText('Equipo B')).toBeInTheDocument();
+  });
+
+  it('is ready again after "Importar y jugar" when navigation keeps it mounted', async () => {
+    const resultado = validarFilas(MATRIZ_MIXTA);
+    if (!resultado.ok) {
+      throw new Error(resultado.error);
+    }
+    // A layout route keeps the panel mounted while the game summary renders in the outlet.
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: (
+            <>
+              <PanelImportacion nombreArchivo="repaso-2b.xlsx" filas={resultado.filas} />
+              <Outlet />
+            </>
+          ),
+          children: [
+            { path: RUTAS.importar, element: null },
+            { path: RUTAS.configurarJuegoGuardado, element: <p>Resumen del juego</p> },
+          ],
+        },
+      ],
+      { initialEntries: [RUTAS.importar] },
+    );
+    render(
+      <RepositoriosProvider repositorios={entorno.repositorios}>
+        <RouterProvider router={router} />
+      </RepositoriosProvider>,
+    );
+    const usuario = userEvent.setup();
+
+    await usuario.click(screen.getByRole('button', { name: 'Importar y jugar' }));
+
+    expect(await screen.findByText('Resumen del juego')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Importar y jugar' })).toBeEnabled();
+    });
+    expect(screen.getByRole('button', { name: 'Importar 2 preguntas' })).toBeEnabled();
+  });
+
+  it('is ready again after "Importar y jugar" fails', async () => {
+    vi.spyOn(entorno.repositorios.importacion, 'importarYJugar').mockRejectedValueOnce(
+      new Error('fallo de escritura'),
+    );
+    const { usuario } = renderizarPanel(MATRIZ_MIXTA);
+
+    await usuario.click(screen.getByRole('button', { name: 'Importar y jugar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No se pudieron guardar las preguntas. La vista previa sigue aquí; intenta de nuevo.',
+    );
+    expect(screen.getByRole('button', { name: 'Importar y jugar' })).toBeEnabled();
+  });
+
+  it('does not log React warnings when "Importar y jugar" navigates away', async () => {
+    const errorConsola = vi.spyOn(console, 'error');
+    const { usuario } = renderizarPanel(MATRIZ_MIXTA);
+
+    await usuario.click(screen.getByRole('button', { name: 'Importar y jugar' }));
+    expect(await screen.findByRole('heading', { name: 'Configurar juego' })).toBeInTheDocument();
+
+    expect(errorConsola).not.toHaveBeenCalled();
+    errorConsola.mockRestore();
+  });
+
+  it('disables "Cancelar" while importing', async () => {
+    let liberar: () => void = () => undefined;
+    vi.spyOn(entorno.repositorios.importacion, 'importarPreguntas').mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          liberar = () => {
+            reject(new Error('cancelada'));
+          };
+        }),
+    );
+    const resultado = validarFilas(MATRIZ_MIXTA);
+    if (!resultado.ok) {
+      throw new Error(resultado.error);
+    }
+    const alReiniciar = vi.fn();
+    const router = createMemoryRouter(
+      [
+        {
+          path: RUTAS.importar,
+          element: (
+            <PanelImportacion
+              nombreArchivo="repaso-2b.xlsx"
+              filas={resultado.filas}
+              onReiniciar={alReiniciar}
+            />
+          ),
+        },
+      ],
+      { initialEntries: [RUTAS.importar] },
+    );
+    render(
+      <RepositoriosProvider repositorios={entorno.repositorios}>
+        <RouterProvider router={router} />
+      </RepositoriosProvider>,
+    );
+    const usuario = userEvent.setup();
+
+    await usuario.click(screen.getByRole('button', { name: 'Importar 2 preguntas' }));
+
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+    liberar();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Cancelar' })).toBeEnabled();
+    });
+    expect(alReiniciar).not.toHaveBeenCalled();
   });
 });
