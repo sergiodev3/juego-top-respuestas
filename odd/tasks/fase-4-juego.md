@@ -29,7 +29,7 @@ Phases 1–3 built the bank, import and a pure engine. Nothing yet persists a ru
 
 - [x] T4.1 Infra: `RepositorioPartidas` (crear, obtener, obtenerEnCurso, agregarEvento, deshacer, terminar) + `crearConfigPartida` + quick-game defaults; sync protocol + Zod schemas (incl. `VistaTablero`) + BroadcastChannel adapter; second-screen helper; board view `/tablero` rendering the projection; Inicio "Continuar partida" (route: delegated writer A — 2+ non-trivial files; test-first)
 - [x] T4.2 Configuration UI: `/juego/configurar` (new) and `/juego/configurar/:juegoId` (edit/saved): name, teams 2–4 (name, color), strikes, rounds (count, per-round multiplier, question per round), selection modes (manual / tema / random), final round (toggle, 5 questions, seconds, goal); "Iniciar partida"; "Nuevo juego rápido" from Inicio (route: delegated writer B; test-first)
-- [ ] T4.3 Conductor panel `/juego/panel/:partidaId`: current question with all answers, points, synonyms and revealed markers; scores, strikes, turn, multiplier, phase; action buttons for every event, enabled/disabled via `validar` with the Spanish reason as tooltip/description; face-off flow, PASAR team picker (3–4 teams), steal assignment; final-round UI (player answers with match picker / no match, repeat warning, reveal, switch player, timer); undo; confirmations (terminar partida, siguiente ronda with hidden answers); open/reconnect board + connection indicator; publishes the projection on every change (route: delegated writer C; test-first)
+- [x] T4.3 Conductor panel `/juego/panel/:partidaId`: current question with all answers, points, synonyms and revealed markers; scores, strikes, turn, multiplier, phase; action buttons for every event, enabled/disabled via `validar` with the Spanish reason as tooltip/description; face-off flow, PASAR team picker (3–4 teams), steal assignment; final-round UI (player answers with match picker / no match, repeat warning, reveal, switch player, timer); undo; confirmations (terminar partida, siguiente ronda with hidden answers); open/reconnect board + connection indicator; publishes the projection on every change (route: delegated writer C; test-first)
 - [ ] T4.4 Verify (typecheck, lint, format:check, test, build), work-unit commits per task, RDD per commit range
 
 ## Acceptance criteria
@@ -58,6 +58,14 @@ Runner: Vitest. Pure pieces (config builder, sync schemas/protocol logic, presen
 
 - T4.2 (writer B): RED → GREEN (juegos repo 3, model 2, edicionJuego module, configurar view 9, quick game, app routes 2). Writer: typecheck/lint/format clean, test 46 files / 480 passed, build OK. Parent spot check: 480 passed, lint 0. Juegos repo gained `actualizar` + `eliminar` (soft). Pure editing domain in `dominio/edicionJuego.ts`; shared start flow `useIniciarPartida`; quick game at `/juego/rapido`; manual picker hides questions already used; random fills replace rounds without reuse; "Guardar" checks schema only, "Iniciar" runs full validation. ~2,600 authored lines incl. tests (coherent UI, not split). `PREGUNTAS_RONDA_FINAL` duplicated in `shared/modelo` because the engine doesn't export it (follow-up: export from engine).
 
+- T4.2 commit `a749e83`; RDD medium (27 files / 2608 lines); user granted; review-reliability approved; acknowledged (lineage review-f030362d448e21f3). Advisory (W) double "Guardar"/"Iniciar" before re-render can create duplicate games → synchronous in-flight guard; (W) final-round question ids persist after toggling the final round off → clear on toggle-off and test toggle-off-then-start. Both folded into T4.3.
+
+- T4.3 (writer C): panel built on `usePartidaEnCurso` (config + saved log, `estado = reducir`, validar → agregarEvento → saved log, single in-flight write, marks partida `terminada` at `juegoTerminado`), `useAccionesPanel` (named actions with habilitada/motivo/codigo/ejecutar — Fase 5 shortcuts reuse them), `BotonAccion` (aria-disabled + engine motivo), `useTemporizador` (injected clock), `useAbrirTablero`. T4.2 advisories fixed (in-flight guard; final round toggle-off clears ids). RED → GREEN: advisories 2, dominio/panel 8 + 2, panel UI 15/15, final round 3/3; `/juego/panel` redirect tests passed first run (no RED). ~3,050 authored lines incl. tests (one coherent UI).
+  - Writer verification: typecheck/lint/format clean, build OK, test 49 files / 512 passed in 3 of 4 runs — 1 run failed an untouched importer test (`findByRole` 1 s default timeout under load).
+  - Parent fix: Testing Library `asyncUtilTimeout: 5_000` in `src/test/setup.ts`. Re-run 3× full suite: 49 files / 512 passed each time; lint, typecheck, format clean.
+  - Known: engine `motivo` strings use "tú" while panel copy uses "usted" — harmonize in Fase 5 polish (engine change).
+  - Manual test script (from writer) recorded in the phase summary to the user.
+
 ## Next step
 
-Commit T4.2 + RDD, then T4.3 delegated writer C (panel).
+Commit T4.3 + RDD, then user manual test and approval before Fase 5.

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider, useParams } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -271,5 +271,44 @@ describe('VistaConfigurarJuego: saved games', () => {
     renderizar(rutaConfigurarJuego('no-existe'));
 
     expect(await screen.findByText('No se encontró el juego solicitado.')).toBeInTheDocument();
+  });
+});
+
+describe('VistaConfigurarJuego: robustness', () => {
+  it('never creates duplicate games when save and start are triggered again before re-render', async () => {
+    await sembrar();
+    const { usuario } = renderizar(RUTAS.configurarJuego);
+    await usuario.click(await screen.findByRole('radio', { name: 'Aleatoria' }));
+    await usuario.click(await screen.findByRole('checkbox', { name: /Historia/u }));
+    await usuario.click(screen.getByRole('button', { name: 'Llenar rondas al azar' }));
+    const formulario = screen.getByRole('form', { name: 'Nuevo juego' });
+
+    fireEvent.submit(formulario);
+    fireEvent.submit(formulario);
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar partida' }));
+
+    await expect.poll(() => screen.queryByText('Juego guardado.')).not.toBeNull();
+    expect(await entorno.repositorios.juegos.listar()).toHaveLength(1);
+  });
+
+  it('clears the final-round questions when the final round is turned off', async () => {
+    await sembrar();
+    const { usuario } = renderizar(RUTAS.configurarJuego);
+
+    await usuario.click(await screen.findByRole('radio', { name: 'Aleatoria' }));
+    await usuario.click(await screen.findByRole('checkbox', { name: /Ciencias 2B/u }));
+    await usuario.click(screen.getByRole('checkbox', { name: /Historia/u }));
+    await usuario.click(screen.getByRole('button', { name: 'Llenar rondas al azar' }));
+    await usuario.click(screen.getByRole('checkbox', { name: 'Incluir ronda final' }));
+    await usuario.click(screen.getByRole('button', { name: 'Llenar ronda final al azar' }));
+    expect(itemsDe('Preguntas de la ronda final')).toHaveLength(5);
+
+    await usuario.click(screen.getByRole('checkbox', { name: 'Incluir ronda final' }));
+    await usuario.click(screen.getByRole('button', { name: 'Iniciar partida' }));
+
+    expect(await screen.findByText(/^Panel /u)).toBeInTheDocument();
+    const [guardado] = await entorno.repositorios.juegos.listar();
+    expect(guardado?.reglas.rondaFinal).toMatchObject({ activa: false, preguntaIds: [] });
+    expect((await entorno.repositorios.partidas.obtenerEnCurso())?.config.rondaFinal).toBeNull();
   });
 });

@@ -143,7 +143,9 @@ export function SeccionRondaFinal({ datos, preguntasPorId, onCambiar }: SeccionP
           type="checkbox"
           checked={rondaFinal.activa}
           onChange={(evento) => {
-            cambiar({ activa: evento.target.checked });
+            // Turning it off drops its questions so they are neither saved nor hidden elsewhere.
+            const activa = evento.target.checked;
+            cambiar(activa ? { activa } : { activa, preguntaIds: [] });
           }}
           className="size-5"
         />

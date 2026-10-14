@@ -7,8 +7,11 @@ import { afterEach } from 'vitest';
 
 // DOM-only setup: engine and db tests run in the `node` environment and skip it.
 if (typeof document !== 'undefined') {
-  const { cleanup } = await import('@testing-library/react');
+  const { cleanup, configure } = await import('@testing-library/react');
   afterEach(cleanup);
+  // Live queries (Dexie liveQuery) can take over the 1 s default to settle when the whole
+  // suite runs in parallel; give `findBy*`/`waitFor` more room to avoid timing flakes.
+  configure({ asyncUtilTimeout: 5_000 });
 
   // jsdom does not implement modal dialogs yet; emulate the open/close state.
   if (typeof HTMLDialogElement !== 'undefined' && !('showModal' in HTMLDialogElement.prototype)) {

@@ -13,3 +13,17 @@ export {
   quitarEquipo,
   validarParaIniciar,
 } from './edicionJuego';
+export {
+  accionSiguienteRonda,
+  confirmacionPara,
+  ETIQUETAS_FASE,
+  evaluarAccion,
+  eventoRevelar,
+  ganadoresJuego,
+  guiaPanel,
+  nombreEquipo,
+  proyectarTotalRondaFinal,
+  respuestasOcultas,
+  type Confirmacion,
+  type EstadoAccion,
+} from './panel';

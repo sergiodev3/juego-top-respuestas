@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useId, useMemo, useState, type SubmitEvent } from 'react';
+import { useId, useMemo, useRef, useState, type SubmitEvent } from 'react';
 
 import { useRepositorios } from '@/db/contextoRepositorios';
 import {
@@ -45,6 +45,8 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
   const [problemas, setProblemas] = useState<Problemas | null>(null);
   const [confirmacion, setConfirmacion] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  // Synchronous guard: a second save/start before the re-render must not create a second game.
+  const enVuelo = useRef(false);
   const inicio = useIniciarPartida();
 
   const banco = useLiveQuery(
@@ -85,6 +87,10 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
 
   async function guardar(evento?: SubmitEvent<HTMLFormElement>) {
     evento?.preventDefault();
+    if (enVuelo.current) {
+      return;
+    }
+    enVuelo.current = true;
     setProblemas(null);
     setConfirmacion('');
     setOcupado(true);
@@ -95,11 +101,15 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
     } catch {
       setProblemas({ titulo: 'No se pudo guardar el juego.', lista: ['Intente de nuevo.'] });
     } finally {
+      enVuelo.current = false;
       setOcupado(false);
     }
   }
 
   async function iniciarPartida() {
+    if (enVuelo.current) {
+      return;
+    }
     setProblemas(null);
     setConfirmacion('');
     const errores = validarParaIniciar(datos);
@@ -107,6 +117,7 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
       setProblemas({ titulo: 'No se puede iniciar la partida:', lista: errores });
       return;
     }
+    enVuelo.current = true;
     setOcupado(true);
     try {
       const juego = await guardarDatos();
@@ -122,6 +133,7 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
     } catch {
       setProblemas({ titulo: 'No se pudo iniciar la partida.', lista: ['Intente de nuevo.'] });
     } finally {
+      enVuelo.current = false;
       setOcupado(false);
     }
   }
