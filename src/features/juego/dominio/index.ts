@@ -27,3 +27,4 @@ export {
   type Confirmacion,
   type EstadoAccion,
 } from './panel';
+export { sonidoDeEvento } from './sonidos';

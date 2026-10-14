@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 
 import { proyectarTablero } from '@/engine';
 import type { EntornoVentanas } from '@/shared/pantallas';
+import { useSonidos } from '@/shared/sonido';
 import { usePublicadorTablero, type DatosTablero } from '@/shared/sync';
 import { AvisoError } from '@/shared/ui/AvisoError';
 
@@ -60,6 +61,8 @@ export function PanelPartida({
   const { config, estado } = partida;
   const acciones = useAccionesPanel(partida, control);
   const tablero = useAbrirTablero(entornoVentanas);
+  // Mute switch; T5.2's `M` shortcut calls the same `alternarSilencio` via `useSonidos()`.
+  const { silenciado, alternarSilencio } = useSonidos();
   const [ajustando, setAjustando] = useState(false);
 
   const jugador = estado.rondaFinal?.jugadorActual ?? 1;
@@ -94,6 +97,8 @@ export function PanelPartida({
         tableroConectado={tableroConectado}
         tableroAbierto={tablero.abierto}
         onAbrirTablero={() => void tablero.abrir()}
+        silenciado={silenciado}
+        onAlternarSilencio={alternarSilencio}
         deshacer={acciones.deshacer}
         terminar={acciones.terminarJuego}
       />

@@ -12,17 +12,24 @@ interface EncabezadoPanelProps {
   tableroConectado: boolean;
   tableroAbierto: boolean;
   onAbrirTablero: () => void;
+  silenciado: boolean;
+  onAlternarSilencio: () => void;
   deshacer: AccionPanel;
   terminar: AccionPanel;
 }
 
-/** Game name, round, multiplier, phase, board status and the always-present actions. */
+/**
+ * Game name, round, multiplier, phase, board status, the mute switch and the always-present
+ * actions.
+ */
 export function EncabezadoPanel({
   config,
   estado,
   tableroConectado,
   tableroAbierto,
   onAbrirTablero,
+  silenciado,
+  onAlternarSilencio,
   deshacer,
   terminar,
 }: EncabezadoPanelProps) {
@@ -66,6 +73,17 @@ export function EncabezadoPanel({
             {tableroAbierto || tableroConectado
               ? 'Reconectar tablero'
               : 'Abrir tablero en el proyector'}
+          </button>
+          <button
+            type="button"
+            aria-pressed={silenciado}
+            className={cx(
+              CLASE_BOTON_SECUNDARIO,
+              'aria-pressed:border-amber-700 aria-pressed:bg-amber-200 aria-pressed:hover:bg-amber-300',
+            )}
+            onClick={onAlternarSilencio}
+          >
+            Silenciar sonido
           </button>
           <BotonAccion accion={deshacer}>Deshacer</BotonAccion>
           <BotonAccion accion={terminar} variante="peligro">
