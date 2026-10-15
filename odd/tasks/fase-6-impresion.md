@@ -60,6 +60,8 @@ Runner: Vitest. Pure domain (cards from set/game, sheet grouping, scoreboard row
 
 - T6.3 commit `b4167f7`; RDD medium (range `80002c1..b4167f7`, 21 files / 563 lines); user granted; review-reliability approved; acknowledged (lineage review-3fc7bb5510a73f99). Last reviewed commit: `b4167f7`. Advisory (S, informational, not acted on): `HojaMarcador.tsx:35` column keys use `etiqueta` (unique by construction: "R1", "R2 x2", "Ronda final", "Total").
 
+- User manual test in a real print preview (2026-10-15): "va bien" → Fase 6 approved.
+
 ## Next step
 
-The the user's manual test in a real print preview (Chrome/Edge: 2 and 4 per sheet, long answers, scoreboard, no trailing blank page) and approval before Fase 7.
+Push / PR on the user's request; then Fase 7 (respaldos JSON, PWA offline completa, README, despliegue).
