@@ -115,7 +115,7 @@ describe('VistaJuegoRapido', () => {
 
     await usuario.click(await screen.findByRole('button', { name: 'Jugar' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Elija un set para jugar.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Elige un set para jugar.');
     expect(await entorno.repositorios.juegos.listar()).toEqual([]);
   });
 });

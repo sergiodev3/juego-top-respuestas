@@ -54,6 +54,8 @@ export const esquemaVistaTablero = z.object({
       equipoControl: indice.nullable(),
       equipoRobo: indice.nullable(),
       ganadorCaraACara: indice.nullable(),
+      // Required: panel and board ship in the same static build, so both always send it.
+      fallosCaraACara: indice,
       ganadorRonda: indice.nullable(),
       puntosOtorgados: entero.nullable(),
     })

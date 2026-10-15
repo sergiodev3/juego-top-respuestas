@@ -1,5 +1,5 @@
 // Test-only harness for the conductor panel: injected repositories, in-memory board channel,
-// fake windows and a manual timer clock.
+// fake windows, a manual timer clock and a fake sound player.
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -10,6 +10,13 @@ import type { Repositorios } from '@/db/repositorios';
 import type { VistaTablero } from '@/engine';
 import type { EntornoVentanas } from '@/shared/pantallas';
 import { RUTAS, rutaPanel } from '@/shared/rutas';
+import {
+  crearAlmacenSilencio,
+  SonidosProvider,
+  type AlmacenamientoSilencio,
+  type NombreSonido,
+  type ReproductorSonidos,
+} from '@/shared/sonido';
 import { crearCanal, type MensajeEstadoTablero, type MensajeSync } from '@/shared/sync';
 import { CanalSyncProvider } from '@/shared/sync';
 import { crearBusMemoria } from '@/test/transporteMemoria';
@@ -50,12 +57,41 @@ export function crearVentanasFalsas(bloqueado = false) {
   return { entorno, open };
 }
 
+/** In-memory storage for the mute switch; share it between renders to emulate a reload. */
+export function crearAlmacenamientoMemoria() {
+  const datos = new Map<string, string>();
+  const almacenamiento: AlmacenamientoSilencio = {
+    getItem: (clave) => datos.get(clave) ?? null,
+    setItem: (clave, valor) => {
+      datos.set(clave, valor);
+    },
+  };
+  return { datos, almacenamiento };
+}
+
+/** Fake player that records what was played (in order), with its own mute switch. */
+export function crearSonidosFalsos(
+  almacenamiento: AlmacenamientoSilencio = crearAlmacenamientoMemoria().almacenamiento,
+) {
+  const reproducidos: NombreSonido[] = [];
+  return {
+    reproducidos,
+    reproductor: {
+      reproducir(nombre: NombreSonido) {
+        reproducidos.push(nombre);
+      },
+    },
+    silencio: crearAlmacenSilencio(() => almacenamiento),
+  };
+}
+
 export interface OpcionesPanel {
   repositorios: Repositorios;
   partidaId: string;
   bus?: ReturnType<typeof crearBusMemoria>;
   ventanas?: ReturnType<typeof crearVentanasFalsas>;
   reloj?: ReturnType<typeof crearRelojManual>;
+  sonidos?: ReturnType<typeof crearSonidosFalsos>;
   /** Initial path; defaults to the partida's panel. */
   ruta?: string;
 }
@@ -66,6 +102,7 @@ export function renderizarPanel({
   bus = crearBusMemoria(),
   ventanas = crearVentanasFalsas(),
   reloj = crearRelojManual(),
+  sonidos = crearSonidosFalsos(),
   ruta = rutaPanel(partidaId),
 }: OpcionesPanel) {
   const vista = <VistaPanel entornoVentanas={ventanas.entorno} relojTemporizador={reloj.reloj} />;
@@ -77,14 +114,37 @@ export function renderizarPanel({
     ],
     { initialEntries: [ruta] },
   );
-  const resultado = render(
+  const canal = crearCanal(bus.crearTransporte());
+  const arbol = (reproductor: ReproductorSonidos) => (
     <RepositoriosProvider repositorios={repositorios}>
-      <CanalSyncProvider canal={crearCanal(bus.crearTransporte())}>
-        <RouterProvider router={router} />
+      <CanalSyncProvider canal={canal}>
+        <SonidosProvider reproductor={reproductor} silencio={sonidos.silencio}>
+          <RouterProvider router={router} />
+        </SonidosProvider>
       </CanalSyncProvider>
-    </RepositoriosProvider>,
+    </RepositoriosProvider>
   );
-  return { ...resultado, bus, ventanas, reloj, router, usuario: userEvent.setup() };
+  const resultado = render(arbol(sonidos.reproductor));
+  /** Re-renders with a new player object (same recorder), so `reproducir` changes identity. */
+  function renovarReproductor() {
+    resultado.rerender(
+      arbol({
+        reproducir(nombre) {
+          sonidos.reproductor.reproducir(nombre);
+        },
+      }),
+    );
+  }
+  return {
+    ...resultado,
+    bus,
+    ventanas,
+    reloj,
+    sonidos,
+    router,
+    renovarReproductor,
+    usuario: userEvent.setup(),
+  };
 }
 
 /** The action button, once it is enabled (the previous action finished saving). */

@@ -19,7 +19,7 @@ function crearRelojManual() {
   };
   return {
     reloj,
-    avanzar(ms: number) {
+    avanzar: (ms: number) => {
       momento += ms;
       act(() => {
         for (const tarea of [...tareas]) {

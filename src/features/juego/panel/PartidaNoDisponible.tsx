@@ -40,7 +40,7 @@ export function PartidaNoDisponible({
       ) : (
         carga.existe && (
           <p className="text-slate-700">
-            Puede darla por terminada para iniciar otra partida desde el inicio.
+            Puedes darla por terminada para iniciar otra partida desde el inicio.
           </p>
         )
       )}
@@ -65,7 +65,7 @@ export function PartidaNoDisponible({
       <DialogoConfirmacion
         abierto={confirmando}
         titulo="¿Terminar esta partida?"
-        descripcion="No se puede recuperar. Se dará por terminada para que pueda iniciar otra."
+        descripcion="No se puede recuperar. Se dará por terminada para que puedas iniciar otra."
         textoConfirmar="Terminar partida"
         ocupado={guardando}
         onConfirmar={() => {

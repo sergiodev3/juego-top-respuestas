@@ -1,4 +1,4 @@
-import { respuestasDe } from './reglas/comun';
+import { multiplicadorDe, respuestasDe } from './reglas/comun';
 import { puntosRondaFinal, respuestasJugador, totalRondaFinal } from './reglas/rondaFinal';
 import type {
   ConfigPartida,
@@ -17,6 +17,10 @@ export interface VistaRespuesta {
   readonly numero: number;
   readonly revelada: boolean;
   readonly texto?: string;
+  /**
+   * Display points. In a regular round they are already multiplied by the round multiplier (an
+   * answer worth 30 shows 60 in an x2 round); final-round points have no multiplier.
+   */
   readonly puntos?: number;
 }
 
@@ -35,12 +39,23 @@ export interface VistaRonda {
   readonly respuestas: readonly VistaRespuesta[];
   readonly tachas: number;
   readonly tachasMaximas: number;
+  /**
+   * Display pot: the base pot times `multiplicador`, so it is exactly what the round winner gets
+   * (`puntosOtorgados` once the round is awarded). The engine state keeps the base pot.
+   */
   readonly bolsa: number;
   /** Team indexes into `VistaTablero.equipos`. */
   readonly equipoControl: number | null;
   readonly equipoRobo: number | null;
   readonly ganadorCaraACara: number | null;
+  /**
+   * Face-off misses so far this round (never round strikes). Kept after the face-off ends so
+   * undoing back into it does not raise it; a new round starts at 0. Only a count: no team, no
+   * answer data.
+   */
+  readonly fallosCaraACara: number;
   readonly ganadorRonda: number | null;
+  /** Points the round winner got (pot x multiplier); equals `bolsa` once the round is awarded. */
   readonly puntosOtorgados: number | null;
 }
 
@@ -80,29 +95,54 @@ function vistaRespuesta(
     : { numero, revelada: true, texto: visible.texto, puntos: visible.puntos };
 }
 
+/** Display points of the current round, already multiplied by the round multiplier. */
+export interface PuntosVisibles {
+  /** Every answer of the current question (hidden ones too), in board order. */
+  readonly respuestas: readonly number[];
+  /** The pot: exactly what the round winner gets if the round ended now. */
+  readonly bolsa: number;
+}
+
+/**
+ * The points the board and the panel show for a regular round: each answer's points and the pot
+ * times the round multiplier, like on TV (an answer worth 30 shows 60 in an x2 round). The
+ * engine state keeps base points; the rules apply the multiplier once, when the round is awarded,
+ * so the awarded points always equal the pot on display.
+ */
+export function puntosVisibles(config: ConfigPartida, ronda: EstadoRonda): PuntosVisibles {
+  const multiplicador = multiplicadorDe(config, ronda);
+  return {
+    respuestas: respuestasDe(config, ronda).map(({ puntos }) => puntos * multiplicador),
+    bolsa: ronda.bolsa * multiplicador,
+  };
+}
+
 function proyectarRonda(config: ConfigPartida, ronda: EstadoRonda): VistaRonda {
   const configRonda = config.rondas[ronda.indice];
   const respuestas = respuestasDe(config, ronda);
+  const puntos = puntosVisibles(config, ronda);
   return {
     numero: ronda.indice + 1,
     total: config.rondas.length,
-    multiplicador: configRonda?.multiplicador ?? 1,
+    multiplicador: multiplicadorDe(config, ronda),
     pregunta: configRonda?.pregunta.texto ?? '',
     respuestas: ronda.respuestas.map((estadoRespuesta, indice) => {
       const respuesta = respuestas[indice];
+      const puntosRespuesta = puntos.respuestas[indice];
       return vistaRespuesta(
         indice + 1,
-        estadoRespuesta === 'oculta' || respuesta === undefined
+        estadoRespuesta === 'oculta' || respuesta === undefined || puntosRespuesta === undefined
           ? null
-          : { texto: respuesta.texto, puntos: respuesta.puntos },
+          : { texto: respuesta.texto, puntos: puntosRespuesta },
       );
     }),
     tachas: ronda.tachas,
     tachasMaximas: config.tachasMaximas,
-    bolsa: ronda.bolsa,
+    bolsa: puntos.bolsa,
     equipoControl: ronda.equipoControl,
     equipoRobo: ronda.equipoRobo,
     ganadorCaraACara: ronda.caraACara.ganador,
+    fallosCaraACara: ronda.caraACara.intentos.filter((intento) => intento.indice === null).length,
     ganadorRonda: ronda.ganador,
     puntosOtorgados: ronda.puntosOtorgados,
   };
@@ -143,7 +183,8 @@ function proyectarRondaFinal(
 
 /**
  * Builds the board view. Only revealed answers carry text and points; synonyms, hidden answers,
- * other rounds and replay warnings never leave the engine.
+ * other rounds and replay warnings never leave the engine. Round points are display values,
+ * already multiplied (see `puntosVisibles`).
  */
 export function proyectarTablero(config: ConfigPartida, estado: EstadoJuego): VistaTablero {
   return {

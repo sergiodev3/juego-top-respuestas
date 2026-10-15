@@ -25,7 +25,7 @@ export interface Banco {
 type Modo = 'manual' | 'tema' | 'sets';
 
 const MODOS: { modo: Modo; etiqueta: string; descripcion: string }[] = [
-  { modo: 'manual', etiqueta: 'Manual', descripcion: 'Elija cada pregunta del banco.' },
+  { modo: 'manual', etiqueta: 'Manual', descripcion: 'Elige cada pregunta del banco.' },
   {
     modo: 'tema',
     etiqueta: 'Por tema',
@@ -104,13 +104,13 @@ export function SelectorPreguntas({ banco, datos, onCambiar, aleatorio }: Select
   function candidatas(): string[] | null {
     if (modo === 'tema') {
       if (temasElegidos.length === 0) {
-        setAviso('Elija al menos un tema.');
+        setAviso('Elige al menos un tema.');
         return null;
       }
       return banco.preguntas.filter((p) => temasElegidos.includes(p.tema)).map((p) => p.id);
     }
     if (setsElegidos.length === 0) {
-      setAviso('Elija al menos un set.');
+      setAviso('Elige al menos un set.');
       return null;
     }
     return banco.preguntas.filter((p) => setsElegidos.includes(p.setId)).map((p) => p.id);
@@ -119,7 +119,7 @@ export function SelectorPreguntas({ banco, datos, onCambiar, aleatorio }: Select
   function llenarRondasAlAzar() {
     const numero = Number(cantidad);
     if (!Number.isInteger(numero) || numero < 1 || numero > MAX_RONDAS_AZAR) {
-      setAviso(`Indique un número de rondas entre 1 y ${String(MAX_RONDAS_AZAR)}.`);
+      setAviso(`Indica un número de rondas entre 1 y ${String(MAX_RONDAS_AZAR)}.`);
       return;
     }
     const ids = candidatas();
@@ -195,7 +195,7 @@ export function SelectorPreguntas({ banco, datos, onCambiar, aleatorio }: Select
 
       {banco.preguntas.length === 0 && (
         <p className="rounded-lg border border-dashed border-slate-400 bg-white p-4 text-slate-700">
-          El banco no tiene preguntas todavía. Agréguelas en «Banco de preguntas» o «Importar».
+          El banco no tiene preguntas todavía. Agrégalas en «Banco de preguntas» o «Importar».
         </p>
       )}
 
@@ -259,7 +259,7 @@ export function SelectorPreguntas({ banco, datos, onCambiar, aleatorio }: Select
           </div>
           <p className="text-sm text-slate-600">
             {resultados.length > LIMITE_RESULTADOS
-              ? `Se muestran ${String(LIMITE_RESULTADOS)} de ${textoPreguntas(resultados.length)}; refine la búsqueda para ver otras.`
+              ? `Se muestran ${String(LIMITE_RESULTADOS)} de ${textoPreguntas(resultados.length)}; refina la búsqueda para ver otras.`
               : `${textoPreguntas(resultados.length)} disponibles.`}
             {enUso.size > 0 && ' No se muestran las que ya están en el juego.'}
           </p>
@@ -387,7 +387,7 @@ export function SelectorPreguntas({ banco, datos, onCambiar, aleatorio }: Select
             )}
           </div>
           <p className="text-sm text-slate-600">
-            Las rondas actuales se reemplazan; después puede reordenarlas o quitarlas.
+            Las rondas actuales se reemplazan; después puedes reordenarlas o quitarlas.
           </p>
         </div>
       )}

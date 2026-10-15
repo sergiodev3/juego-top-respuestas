@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { RepositoriosProvider } from '@/db/RepositoriosProvider';
+import type { Repositorios } from '@/db/repositorios';
+import type { Partida } from '@/shared/modelo';
 import { RUTAS } from '@/shared/rutas';
 import { crearEntornoPrueba } from '@/test/baseDatosPrueba';
 import { configPrueba } from '@/test/fabricasPartida';
@@ -22,16 +24,39 @@ afterEach(() => {
   entorno.db.close();
 });
 
-function renderizar() {
+function renderizar(repositorios: Repositorios = entorno.repositorios) {
   const router = createMemoryRouter([{ path: RUTAS.inicio, element: <VistaInicio /> }]);
   render(
-    <RepositoriosProvider repositorios={entorno.repositorios}>
+    <RepositoriosProvider repositorios={repositorios}>
       <RouterProvider router={router} />
     </RepositoriosProvider>,
   );
 }
 
 describe('VistaInicio', () => {
+  it('shows a neutral loading card until the in-progress partida is known', async () => {
+    let responder: (partida: Partida | undefined) => void = () => undefined;
+    const pendiente = new Promise<Partida | undefined>((resolver) => {
+      responder = resolver;
+    });
+    renderizar({
+      ...entorno.repositorios,
+      partidas: { ...entorno.repositorios.partidas, obtenerEnCurso: () => pendiente },
+    });
+
+    expect(await screen.findByText('Buscando una partida en curso…')).toBeInTheDocument();
+    expect(screen.queryByText('No hay una partida en curso.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Continuar partida/u })).not.toBeInTheDocument();
+
+    await act(async () => {
+      responder(undefined);
+      await pendiente;
+    });
+
+    expect(await screen.findByText('No hay una partida en curso.')).toBeInTheDocument();
+    expect(screen.queryByText('Buscando una partida en curso…')).not.toBeInTheDocument();
+  });
+
   it('disables "Continuar partida" when no partida is in progress', async () => {
     renderizar();
 

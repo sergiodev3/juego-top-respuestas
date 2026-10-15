@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { proyectarTablero, reducir, type Evento, type VistaTablero } from '@/engine';
 import { CanalSyncProvider, crearCanal, type Canal, type MensajeSync } from '@/shared/sync';
-import { configPrueba } from '@/test/fabricasPartida';
+import { configPrueba, preguntaSnapshotPrueba } from '@/test/fabricasPartida';
 import { crearBusMemoria } from '@/test/transporteMemoria';
 
 import { VistaTablero as VistaTableroRuta } from './VistaTablero';
@@ -76,6 +76,22 @@ describe('VistaTablero', () => {
     expect(screen.getByText('Esperando al conductor…')).toBeInTheDocument();
   });
 
+  it('keeps showing the last game name on the waiting screen after SIN_PARTIDA', () => {
+    renderizar();
+    act(() => {
+      panel.publicar(estado(vistaTras(EN_JUEGO)));
+    });
+
+    act(() => {
+      panel.publicar({ v: 1, tipo: 'SIN_PARTIDA' });
+    });
+
+    expect(screen.getByRole('heading', { name: 'Juego de prueba' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Top Respuestas' })).not.toBeInTheDocument();
+    expect(screen.getByText('Esperando al conductor…')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Pregunta R1' })).not.toBeInTheDocument();
+  });
+
   it('asks the panel for the state as soon as it opens', () => {
     renderizar();
 
@@ -109,6 +125,37 @@ describe('VistaTablero', () => {
     expect(within(marcador).getByText('Equipo A')).toBeInTheDocument();
     expect(within(marcador).getByText('Equipo B')).toBeInTheDocument();
     expect(within(marcador).getByText('En turno')).toBeInTheDocument();
+  });
+
+  it('shows answer points and the pot already multiplied in an x2 round', () => {
+    renderizar();
+    const doble = configPrueba({
+      rondas: [{ pregunta: preguntaSnapshotPrueba('R1', [30, 20, 10]), multiplicador: 2 }],
+    });
+    const vista = proyectarTablero(
+      doble,
+      reducir(doble, [
+        { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+        { tipo: 'REVELAR', indice: 0 },
+        { tipo: 'JUGAR' },
+        { tipo: 'REVELAR', indice: 2 },
+      ]),
+    );
+
+    act(() => {
+      panel.publicar(estado(vista));
+    });
+
+    expect(screen.getByText('Puntos x2')).toBeInTheDocument();
+    const casillas = within(screen.getByRole('list', { name: 'Respuestas' })).getAllByRole(
+      'listitem',
+    );
+    expect(casillas.map((casilla) => casilla.textContent)).toEqual([
+      '1TXT_R1_060',
+      '2',
+      '3TXT_R1_220',
+    ]);
+    expect(screen.getByText('Puntos en juego: 80')).toBeInTheDocument();
   });
 
   it('never shows hidden answers, synonyms or data outside the projection', () => {
@@ -179,7 +226,8 @@ describe('VistaTablero', () => {
             oculto: false,
             respuestas: [
               { numero: 1, revelada: true, texto: 'Perro', puntos: 30 },
-              { numero: 2, revelada: false },
+              { numero: 2, revelada: true, texto: '', puntos: 0 },
+              { numero: 3, revelada: false },
             ],
           },
         ],
@@ -199,6 +247,8 @@ describe('VistaTablero', () => {
     const jugador2 = screen.getByRole('region', { name: 'Jugador 2' });
     expect(within(jugador2).getByText('Perro')).toBeInTheDocument();
     expect(within(jugador2).getByText('30')).toBeInTheDocument();
+    // An answer recorded without text and without a match.
+    expect(within(jugador2).getByText('Sin respuesta')).toBeInTheDocument();
     expect(screen.getByText('Total: 75 de 200')).toBeInTheDocument();
     expect(screen.getByLabelText('Tiempo restante: 13 segundos')).toHaveTextContent('13');
   });
@@ -278,5 +328,34 @@ describe('VistaTablero fullscreen button', () => {
     renderizar();
 
     expect(screen.queryByRole('button', { name: 'Pantalla completa' })).not.toBeInTheDocument();
+  });
+});
+
+describe('VistaTablero idle cursor', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    Reflect.deleteProperty(document.documentElement, 'requestFullscreen');
+  });
+
+  it('hides the cursor and the fullscreen button after 3 s still, and shows them on movement', () => {
+    vi.useFakeTimers();
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: () => Promise.resolve(),
+    });
+    renderizar();
+    expect(screen.getByRole('main')).not.toHaveClass('cursor-none');
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(screen.getByRole('main')).toHaveClass('cursor-none');
+    expect(screen.queryByRole('button', { name: 'Pantalla completa' })).not.toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('mousemove'));
+    });
+    expect(screen.getByRole('main')).not.toHaveClass('cursor-none');
+    expect(screen.getByRole('button', { name: 'Pantalla completa' })).toBeInTheDocument();
   });
 });

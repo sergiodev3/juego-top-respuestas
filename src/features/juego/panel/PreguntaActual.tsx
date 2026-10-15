@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-import type { ConfigPartida, EstadoJuego, VistaTablero } from '@/engine';
+import { puntosVisibles, type ConfigPartida, type EstadoJuego, type VistaTablero } from '@/engine';
 
 import { BotonAccion } from './BotonAccion';
 import { MarcaVisibilidad } from './MarcaVisibilidad';
@@ -14,7 +14,10 @@ interface PreguntaActualProps {
   acciones: AccionesPanel;
 }
 
-/** Current question with every answer (points, synonyms), its board status and "Revelar". */
+/**
+ * Current question with every answer (points as shown on the board, synonyms), its board status
+ * and "Revelar".
+ */
 export function PreguntaActual({ config, estado, vista, acciones }: PreguntaActualProps) {
   const id = useId();
   const ronda = estado.ronda;
@@ -22,6 +25,8 @@ export function PreguntaActual({ config, estado, vista, acciones }: PreguntaActu
   if (ronda === null || pregunta === undefined) {
     return null;
   }
+  // Display points, already multiplied by the round multiplier (the same values as the board).
+  const puntos = puntosVisibles(config, ronda);
   return (
     <section
       aria-labelledby={id}
@@ -54,7 +59,7 @@ export function PreguntaActual({ config, estado, vista, acciones }: PreguntaActu
                 )}
               </div>
               <span className="text-lg font-bold text-slate-900 tabular-nums">
-                {respuesta.puntos} pts
+                {puntos.respuestas[indice]} pts
               </span>
               <MarcaVisibilidad
                 visible={visible}

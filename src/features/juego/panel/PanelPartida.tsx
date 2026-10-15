@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 
 import { proyectarTablero } from '@/engine';
 import type { EntornoVentanas } from '@/shared/pantallas';
+import { useSonidos } from '@/shared/sonido';
 import { usePublicadorTablero, type DatosTablero } from '@/shared/sync';
 import { AvisoError } from '@/shared/ui/AvisoError';
 
@@ -10,11 +11,14 @@ import { AccionesRonda } from './AccionesRonda';
 import { DialogoAjustarPuntos } from './DialogoAjustarPuntos';
 import { EncabezadoPanel } from './EncabezadoPanel';
 import { FinDeJuego } from './FinDeJuego';
+import { HojaAtajos } from './HojaAtajos';
 import { MarcadorPanel } from './MarcadorPanel';
 import { PanelRondaFinal } from './PanelRondaFinal';
 import { PreguntaActual } from './PreguntaActual';
 import { useAbrirTablero } from './useAbrirTablero';
 import { useAccionesPanel } from './useAccionesPanel';
+import { useAtajosPanel } from './useAtajosPanel';
+import { useBorradoresRondaFinal } from './useBorradoresRondaFinal';
 import type { PartidaCargada, PartidaEnCurso } from './usePartidaEnCurso';
 import { useTemporizador, type RelojTemporizador } from './useTemporizador';
 
@@ -60,7 +64,10 @@ export function PanelPartida({
   const { config, estado } = partida;
   const acciones = useAccionesPanel(partida, control);
   const tablero = useAbrirTablero(entornoVentanas);
+  // Mute switch; the `M` shortcut calls the same `alternarSilencio`.
+  const { silenciado, alternarSilencio } = useSonidos();
   const [ajustando, setAjustando] = useState(false);
+  const [ayudaAbierta, setAyudaAbierta] = useState(false);
 
   const jugador = estado.rondaFinal?.jugadorActual ?? 1;
   const segundos = config.rondaFinal?.segundos ?? [0, 0];
@@ -71,6 +78,20 @@ export function PanelPartida({
   );
   const enRondaFinal = estado.fase === 'rondaFinal';
   const { restante, total, corriendo } = temporizador.temporizador;
+  const borradores = useBorradoresRondaFinal(config, estado, acciones);
+  const { aviso, avisar } = useAtajosPanel({
+    config,
+    estado,
+    acciones,
+    borradores,
+    guardando: control.guardando,
+    temporizador,
+    alternarSilencio,
+    ayudaAbierta,
+    alternarAyuda: () => {
+      setAyudaAbierta((abierta) => !abierta);
+    },
+  });
 
   const vista = useMemo(() => proyectarTablero(config, estado), [config, estado]);
   const datosTablero = useMemo<DatosTablero>(
@@ -94,9 +115,25 @@ export function PanelPartida({
         tableroConectado={tableroConectado}
         tableroAbierto={tablero.abierto}
         onAbrirTablero={() => void tablero.abrir()}
+        silenciado={silenciado}
+        onAlternarSilencio={alternarSilencio}
+        onAbrirAtajos={() => {
+          setAyudaAbierta(true);
+        }}
         deshacer={acciones.deshacer}
         terminar={acciones.terminarJuego}
       />
+      <p
+        role="status"
+        aria-label="Aviso del teclado"
+        className={
+          aviso === null
+            ? 'sr-only'
+            : 'rounded-md border border-slate-400 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900'
+        }
+      >
+        {aviso}
+      </p>
       {tablero.avisos}
       {advertencias > 0 && (
         <p className="rounded-md border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-950">
@@ -117,6 +154,8 @@ export function PanelPartida({
                 vista={vista.rondaFinal}
                 acciones={acciones}
                 control={temporizador}
+                borradores={borradores}
+                onAviso={avisar}
               />
             ) : (
               <>
@@ -141,6 +180,12 @@ export function PanelPartida({
         </div>
       )}
       {acciones.dialogo}
+      <HojaAtajos
+        abierta={ayudaAbierta}
+        onCerrar={() => {
+          setAyudaAbierta(false);
+        }}
+      />
       <DialogoAjustarPuntos
         abierto={ajustando}
         config={config}

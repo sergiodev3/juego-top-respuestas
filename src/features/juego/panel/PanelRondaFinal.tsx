@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import type {
   ConfigPartida,
@@ -8,16 +8,16 @@ import type {
   RespuestaRondaFinal,
   VistaRondaFinal,
 } from '@/engine';
+import { useSonidos } from '@/shared/sonido';
 import { CLASE_BOTON_SECUNDARIO, CLASE_CAMPO, CLASE_ETIQUETA } from '@/shared/ui/clases';
+import { cx } from '@/shared/utils/cx';
 
 import { nombreEquipo } from '../dominio';
 import { BotonAccion } from './BotonAccion';
 import { MarcaVisibilidad } from './MarcaVisibilidad';
-import type { AccionesPanel, AccionPanel } from './useAccionesPanel';
+import type { AccionesPanel } from './useAccionesPanel';
+import { SIN_COINCIDENCIA, SIN_ELEGIR, type BorradoresRondaFinal } from './useBorradoresRondaFinal';
 import type { ControlTemporizador } from './useTemporizador';
-
-const SIN_ELEGIR = '';
-const SIN_COINCIDENCIA = 'ninguna';
 
 interface PanelRondaFinalProps {
   config: ConfigPartida;
@@ -25,6 +25,9 @@ interface PanelRondaFinalProps {
   vista: VistaRondaFinal;
   acciones: AccionesPanel;
   control: ControlTemporizador;
+  borradores: BorradoresRondaFinal;
+  /** Shows why Enter in a text field did not record (the keyboard notice). */
+  onAviso: (motivo: string | null) => void;
 }
 
 function TemporizadorPanel({
@@ -89,50 +92,67 @@ interface PreguntaFinalProps {
   estado: EstadoJuego;
   vista: VistaRondaFinal;
   acciones: AccionesPanel;
+  borradores: BorradoresRondaFinal;
+  onAviso: (motivo: string | null) => void;
+}
+
+/** What a recorded answer said; typing is optional, so a blank one reads "Sin respuesta". */
+function textoRegistrado(texto: string): string {
+  return texto.trim() === '' ? 'Sin respuesta' : `«${texto}»`;
 }
 
 /** One final-round question: all answers for the host, both players' answers, and the input. */
-function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFinalProps) {
+function PreguntaFinal({
+  indice,
+  pregunta,
+  estado,
+  vista,
+  acciones,
+  borradores,
+  onAviso,
+}: PreguntaFinalProps) {
   const id = useId();
-  const [texto, setTexto] = useState('');
-  const [coincidencia, setCoincidencia] = useState(SIN_ELEGIR);
+  const { reproducir } = useSonidos();
   const rondaFinal = estado.rondaFinal;
+  const jugador = rondaFinal?.jugadorActual ?? 1;
+  const { borrador, repetida, registrar } = borradores.registro(indice);
+  const actual = borradores.actual === indice;
+  const repetidaAntes = useRef(false);
+
+  useEffect(() => {
+    // TV-show buzzer when the host picks an answer the other player already gave (UI only: the
+    // engine rejects a repeat, so nothing is saved and no event sound plays). Only the change
+    // to repeated plays it, so a new `reproducir` (sound setup change) never replays it.
+    if (repetida && !repetidaAntes.current) {
+      reproducir('tache');
+    }
+    repetidaAntes.current = repetida;
+  }, [repetida, reproducir]);
+
   if (rondaFinal === null) {
     return null;
   }
   const numero = indice + 1;
-  const jugador = rondaFinal.jugadorActual;
-  const indiceElegido =
-    coincidencia === SIN_ELEGIR || coincidencia === SIN_COINCIDENCIA ? null : Number(coincidencia);
-  const responder = acciones.rfResponder(jugador, indice, indiceElegido, texto.trim());
-  const falta =
-    texto.trim() === ''
-      ? 'Escriba lo que respondió el jugador.'
-      : coincidencia === SIN_ELEGIR
-        ? 'Elija la respuesta que coincide o «Sin coincidencia».'
-        : null;
-  const repetida = coincidencia !== SIN_ELEGIR && responder.codigo === 'RESPUESTA_REPETIDA';
-  const registrar: AccionPanel = {
-    ...responder,
-    habilitada: responder.habilitada && falta === null,
-    motivo: falta ?? responder.motivo,
-    async ejecutar() {
-      if (falta !== null) {
-        return false;
-      }
-      const guardado = await responder.ejecutar();
-      if (guardado) {
-        setTexto('');
-        setCoincidencia(SIN_ELEGIR);
-      }
-      return guardado;
-    },
-  };
 
   return (
-    <li className="space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
-      <h3 id={id} className="text-lg font-bold text-slate-900">
-        Pregunta {numero}: {pregunta.texto}
+    <li
+      data-pregunta-final={indice}
+      tabIndex={-1}
+      aria-current={actual ? 'step' : undefined}
+      className={cx(
+        'space-y-3 rounded-xl bg-white p-4 shadow-sm',
+        actual ? 'border-4 border-amber-500' : 'border border-slate-300',
+      )}
+    >
+      <h3 id={id} className="flex flex-wrap items-center gap-2 text-lg font-bold text-slate-900">
+        <span>
+          Pregunta {numero}: {pregunta.texto}
+        </span>
+        {actual && (
+          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-950">
+            Pregunta actual
+          </span>
+        )}
       </h3>
       <ol
         aria-label={`Respuestas de la pregunta ${String(numero)}`}
@@ -169,8 +189,8 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
               className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2"
             >
               <p className="flex-1 text-slate-900">
-                <span className="font-semibold">Jugador {deJugador}:</span> «{registrada.texto}» →{' '}
-                {textoCoincidencia(pregunta, registrada)}
+                <span className="font-semibold">Jugador {deJugador}:</span>{' '}
+                {textoRegistrado(registrada.texto)} → {textoCoincidencia(pregunta, registrada)}
               </p>
               <MarcaVisibilidad
                 visible={visible}
@@ -189,18 +209,32 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
           );
         })}
       </ul>
-      <div className="flex flex-wrap items-end gap-3">
+      <form
+        aria-label={`Registrar la pregunta ${String(numero)}`}
+        className="flex flex-wrap items-end gap-3"
+        onSubmit={(evento) => {
+          // Enter in the text field records the question (the window shortcut ignores fields).
+          evento.preventDefault();
+          if (registrar.habilitada) {
+            onAviso(null);
+            void registrar.ejecutar();
+          } else {
+            onAviso(registrar.motivo);
+          }
+        }}
+      >
         <div className="min-w-48 flex-1">
           <label htmlFor={`${id}-texto`} className={CLASE_ETIQUETA}>
             Respuesta del jugador {jugador} a la pregunta {numero}
           </label>
           <input
             id={`${id}-texto`}
-            value={texto}
+            value={borrador.texto}
             maxLength={80}
             autoComplete="off"
+            placeholder="Opcional"
             onChange={(evento) => {
-              setTexto(evento.target.value);
+              borradores.cambiarTexto(indice, evento.target.value);
             }}
             className={`${CLASE_CAMPO} mt-1`}
           />
@@ -211,14 +245,14 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
           </label>
           <select
             id={`${id}-coincidencia`}
-            value={coincidencia}
+            value={borrador.coincidencia}
             aria-invalid={repetida}
             onChange={(evento) => {
-              setCoincidencia(evento.target.value);
+              borradores.elegirValor(indice, evento.target.value);
             }}
             className={`${CLASE_CAMPO} mt-1`}
           >
-            <option value={SIN_ELEGIR}>Elija…</option>
+            <option value={SIN_ELEGIR}>Elige…</option>
             {pregunta.respuestas.map((respuesta, i) => (
               <option key={i} value={String(i)}>
                 {`${String(i + 1)}. ${respuesta.texto} (${String(respuesta.puntos)} pts)`}
@@ -234,13 +268,13 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
         >
           Registrar
         </BotonAccion>
-      </div>
+      </form>
       {repetida && (
         <p
           role="alert"
           className="rounded-md border-2 border-red-700 bg-red-50 px-4 py-3 text-lg font-bold text-red-900"
         >
-          Respuesta repetida: pida otra respuesta.
+          Respuesta repetida: pide otra respuesta.
         </p>
       )}
     </li>
@@ -254,8 +288,30 @@ export function PanelRondaFinal({
   vista,
   acciones,
   control,
+  borradores,
+  onAviso,
 }: PanelRondaFinalProps) {
   const id = useId();
+  const lista = useRef<HTMLOListElement>(null);
+  const actualAntes = useRef(borradores.actual);
+  const { actual } = borradores;
+
+  useEffect(() => {
+    // Focus follows the current question (record, undo, next player), so the keyboard keeps
+    // working there and `Enter` never lands on a button left behind. With every question
+    // answered, focus rests on the list.
+    if (actualAntes.current === actual) {
+      return;
+    }
+    actualAntes.current = actual;
+    const contenedor = lista.current;
+    const destino =
+      actual === null
+        ? contenedor
+        : contenedor?.querySelector<HTMLElement>(`[data-pregunta-final="${String(actual)}"]`);
+    destino?.focus();
+  }, [actual]);
+
   const rondaFinal = estado.rondaFinal;
   const configFinal = config.rondaFinal;
   if (rondaFinal === null || configFinal === null) {
@@ -303,7 +359,7 @@ export function PanelRondaFinal({
           </BotonAccion>
         </div>
       </section>
-      <ol aria-label="Preguntas de la ronda final" className="space-y-4">
+      <ol ref={lista} tabIndex={-1} aria-label="Preguntas de la ronda final" className="space-y-4">
         {configFinal.preguntas.map((pregunta, indice) => (
           <PreguntaFinal
             key={`${pregunta.id}-${String(indice)}`}
@@ -312,6 +368,8 @@ export function PanelRondaFinal({
             estado={estado}
             vista={vista}
             acciones={acciones}
+            borradores={borradores}
+            onAviso={onAviso}
           />
         ))}
       </ol>

@@ -9,7 +9,7 @@ import type { Partida } from '@/shared/modelo';
 import { RUTAS } from '@/shared/rutas';
 import { crearCanal } from '@/shared/sync';
 import { crearEntornoPrueba } from '@/test/baseDatosPrueba';
-import { configPrueba } from '@/test/fabricasPartida';
+import { configPrueba, preguntaSnapshotPrueba } from '@/test/fabricasPartida';
 import { crearBusMemoria } from '@/test/transporteMemoria';
 
 import {
@@ -95,7 +95,7 @@ describe('VistaPanel: loading and layout', () => {
       within(screen.getByRole('list', { name: 'Respuestas' })).getAllByRole('listitem'),
     ).toHaveLength(5);
     expect(guia()).toHaveTextContent(
-      'Cara a cara: asigne el turno al equipo que presionó primero el botón.',
+      'Cara a cara: asigna el turno al equipo que presionó primero el botón.',
     );
   });
 
@@ -127,7 +127,7 @@ describe('VistaPanel: loading and layout', () => {
     await pulsar(usuario, 'Revelar la respuesta 2');
     await pulsar(usuario, 'Turno: Equipo A');
     await pulsar(usuario, 'Revelar la respuesta 1');
-    await esperarGuia('Equipo A gana el cara a cara. Pregunte si juega o pasa.');
+    await esperarGuia('Equipo A gana el cara a cara. Pregúntale si juega o pasa.');
     await pulsar(usuario, 'Jugar');
     await pulsar(usuario, 'Revelar la respuesta 3');
     await pulsar(usuario, 'Tache');
@@ -172,7 +172,7 @@ describe('VistaPanel: loading and layout', () => {
     await pulsar(usuario, 'Deshacer');
 
     await screen.findByText(
-      'Cara a cara: asigne el turno al equipo que presionó primero el botón.',
+      'Cara a cara: asigna el turno al equipo que presionó primero el botón.',
     );
     expect(await eventosGuardados(id)).toEqual([]);
   });
@@ -191,9 +191,9 @@ describe('VistaPanel: loading and layout', () => {
     await pulsar(usuario, 'Turno: Equipo A');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'No se pudo guardar la acción. El juego sigue como estaba; intente de nuevo.',
+      'No se pudo guardar la acción. El juego sigue como estaba; intenta de nuevo.',
     );
-    expect(guia()).toHaveTextContent('Cara a cara: asigne el turno');
+    expect(guia()).toHaveTextContent('Cara a cara: asigna el turno');
     expect(await eventosGuardados(id)).toEqual([]);
   });
 
@@ -212,6 +212,27 @@ describe('VistaPanel: loading and layout', () => {
     expect(respuesta(1)).toHaveTextContent('Visible en el tablero');
     expect(screen.getByText('Tachas: 1 de 3')).toBeInTheDocument();
     expect(screen.getByText('Puntos en juego: 40')).toBeInTheDocument();
+  });
+
+  it('shows answer points and the pot already multiplied in an x2 round, like the board', async () => {
+    const config = configPrueba({
+      rondas: [{ pregunta: preguntaSnapshotPrueba('R1', [30, 20, 10]), multiplicador: 2 }],
+    });
+    const id = await crearPartida(config, [
+      { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+      { tipo: 'REVELAR', indice: 0 },
+      { tipo: 'JUGAR' },
+    ]);
+    const { bus } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+
+    expect(await screen.findByText('Puntos en juego: 60')).toBeInTheDocument();
+    expect(screen.getByText('Puntos x2')).toBeInTheDocument();
+    expect(respuesta(1)).toHaveTextContent('60 pts');
+    expect(respuesta(2)).toHaveTextContent('40 pts');
+    expect(respuesta(3)).toHaveTextContent('20 pts');
+    await waitFor(() => {
+      expect(ultimaVista(bus)?.ronda).toMatchObject({ bolsa: 60 });
+    });
   });
 });
 
@@ -371,7 +392,7 @@ describe('VistaPanel: projector board', () => {
 
     expect(ventanas.open).toHaveBeenCalledWith('/tablero', 'top-respuestas-tablero');
     const dialogo = await screen.findByRole('dialog', {
-      name: 'Coloque el tablero en el proyector',
+      name: 'Coloca el tablero en el proyector',
     });
     expect(dialogo).toHaveTextContent('Pantalla completa');
     await usuario.click(within(dialogo).getByRole('button', { name: 'Entendido' }));

@@ -41,7 +41,7 @@ export function ListaJuegosGuardados() {
       }
       await inicio.iniciar({ juegoId: juego.id, config: resultado.config });
     } catch {
-      setProblemas({ titulo, lista: ['No se pudo iniciar la partida. Intente de nuevo.'] });
+      setProblemas({ titulo, lista: ['No se pudo iniciar la partida. Intenta de nuevo.'] });
     }
   }
 
@@ -56,7 +56,7 @@ export function ListaJuegosGuardados() {
     } catch {
       setProblemas({
         titulo: `No se pudo eliminar «${porEliminar.nombre}».`,
-        lista: ['Intente de nuevo.'],
+        lista: ['Intenta de nuevo.'],
       });
     } finally {
       setOcupado(false);

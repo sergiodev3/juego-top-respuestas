@@ -48,16 +48,45 @@ export function nombreEquipo(config: ConfigPartida, indice: number | null): stri
   return indice === null ? '' : (config.equipos[indice]?.nombre ?? '');
 }
 
+/**
+ * The final-round question the keyboard works on: the first one the player in turn has not
+ * answered yet. `null` outside the final round or once that player answered all of them.
+ */
+export function preguntaActualRondaFinal(estado: EstadoJuego): number | null {
+  const { rondaFinal } = estado;
+  if (estado.fase !== 'rondaFinal' || rondaFinal === null) {
+    return null;
+  }
+  const respuestas = rondaFinal.jugadorActual === 1 ? rondaFinal.jugador1 : rondaFinal.jugador2;
+  const pregunta = respuestas.findIndex((respuesta) => respuesta === null);
+  return pregunta === -1 ? null : pregunta;
+}
+
+function guiaRondaFinal(config: ConfigPartida, estado: EstadoJuego): string {
+  const { rondaFinal } = estado;
+  if (rondaFinal === null) {
+    return '';
+  }
+  const { jugadorActual } = rondaFinal;
+  const inicio = `Ronda final: juega ${nombreEquipo(config, rondaFinal.equipo)}.`;
+  const pregunta = preguntaActualRondaFinal(estado);
+  if (pregunta === null) {
+    const despues = jugadorActual === 1 ? 'pasa al siguiente jugador' : 'termina la ronda final';
+    const total = String(config.rondaFinal?.preguntas.length ?? 0);
+    return `${inicio} El jugador ${String(jugadorActual)} ya respondió las ${total} preguntas: revela sus respuestas y ${despues}.`;
+  }
+  const respuestas = config.rondaFinal?.preguntas[pregunta]?.respuestas.length ?? 0;
+  return `${inicio} Jugador ${String(jugadorActual)}, pregunta ${String(pregunta + 1)}: elige la coincidencia con 1–${String(respuestas)} (0 = sin coincidencia) y presiona Enter.`;
+}
+
 /** One sentence telling the host what to do next. */
 export function guiaPanel(config: ConfigPartida, estado: EstadoJuego): string {
-  const { ronda, rondaFinal } = estado;
+  const { ronda } = estado;
   switch (estado.fase) {
     case 'juegoTerminado':
       return 'El juego terminó.';
     case 'rondaFinal':
-      return rondaFinal === null
-        ? ''
-        : `Ronda final: juega ${nombreEquipo(config, rondaFinal.equipo)}. Turno del jugador ${String(rondaFinal.jugadorActual)}.`;
+      return guiaRondaFinal(config, estado);
     default:
       break;
   }
@@ -68,22 +97,22 @@ export function guiaPanel(config: ConfigPartida, estado: EstadoJuego): string {
   switch (estado.fase) {
     case 'caraACara':
       if (caraACara.ganador !== null) {
-        return `${nombreEquipo(config, caraACara.ganador)} gana el cara a cara. Pregunte si juega o pasa.`;
+        return `${nombreEquipo(config, caraACara.ganador)} gana el cara a cara. Pregúntale si juega o pasa.`;
       }
       if (caraACara.respondedor !== null) {
-        return `Responde ${nombreEquipo(config, caraACara.respondedor)}. Revele su respuesta o marque tache si no está en el tablero.`;
+        return `Responde ${nombreEquipo(config, caraACara.respondedor)}. Revela su respuesta o marca tache si no está en el tablero.`;
       }
       return caraACara.intentos.length === 0
-        ? 'Cara a cara: asigne el turno al equipo que presionó primero el botón.'
-        : 'Asigne el turno al siguiente equipo que presionó el botón.';
+        ? 'Cara a cara: asigna el turno al equipo que presionó primero el botón.'
+        : 'Asigna el turno al siguiente equipo que presionó el botón.';
     case 'enJuego':
-      return `${nombreEquipo(config, ronda.equipoControl)} tiene el control. Revele cada acierto o marque tache.`;
+      return `${nombreEquipo(config, ronda.equipoControl)} tiene el control. Revela cada acierto o marca tache.`;
     case 'robo':
       return ronda.equipoRobo === null
-        ? 'Robo: asigne el turno al equipo que intentará robar.'
-        : `${nombreEquipo(config, ronda.equipoRobo)} intenta robar. Si acierta, revele esa respuesta; si no, marque «Robo fallido».`;
+        ? 'Robo: asigna el turno al equipo que intentará robar.'
+        : `${nombreEquipo(config, ronda.equipoRobo)} intenta robar. Si acierta, revela esa respuesta; si no, marca «Robo fallido».`;
     default:
-      return `${nombreEquipo(config, ronda.ganador)} gana ${String(ronda.puntosOtorgados ?? 0)} puntos. Puede revelar las respuestas restantes y pasar a la siguiente ronda.`;
+      return `${nombreEquipo(config, ronda.ganador)} gana ${String(ronda.puntosOtorgados ?? 0)} puntos. Puedes revelar las respuestas restantes y pasar a la siguiente ronda.`;
   }
 }
 
@@ -133,7 +162,7 @@ export function confirmacionPara(
       return {
         titulo: '¿Terminar la partida?',
         descripcion:
-          'Se mostrará el resultado final. Después ya no podrá continuar ni deshacer acciones.',
+          'Se mostrará el resultado final. Después ya no podrás continuar ni deshacer acciones.',
         textoConfirmar: 'Terminar partida',
       };
     case 'RF_TERMINAR': {
@@ -150,7 +179,7 @@ export function confirmacionPara(
       if (textoConfirmar === 'Terminar juego') {
         return {
           titulo: '¿Terminar el juego?',
-          descripcion: `${ocultas ? 'Hay respuestas sin revelar. ' : ''}Era la última ronda: se mostrará el resultado final y ya no podrá deshacer acciones.`,
+          descripcion: `${ocultas ? 'Hay respuestas sin revelar. ' : ''}Era la última ronda: se mostrará el resultado final y ya no podrás deshacer acciones.`,
           textoConfirmar,
         };
       }
@@ -158,7 +187,7 @@ export function confirmacionPara(
         ? {
             titulo: 'Hay respuestas sin revelar. ¿Pasar a la siguiente ronda?',
             descripcion:
-              'Las respuestas ocultas no se mostrarán. Puede usar «Revelar todas» antes de continuar.',
+              'Las respuestas ocultas no se mostrarán. Puedes usar «Revelar todas» antes de continuar.',
             textoConfirmar,
           }
         : null;

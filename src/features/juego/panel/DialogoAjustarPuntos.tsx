@@ -35,7 +35,7 @@ export function DialogoAjustarPuntos({
   const accion = acciones.ajustarPuntos(equipo, valor);
   const aplicar = {
     habilitada: accion.habilitada,
-    motivo: delta.trim() === '' ? 'Escriba cuántos puntos sumar o restar.' : accion.motivo,
+    motivo: delta.trim() === '' ? 'Escribe cuántos puntos sumar o restar.' : accion.motivo,
     async ejecutar() {
       const guardado = await accion.ejecutar();
       if (guardado) {
@@ -94,7 +94,7 @@ export function DialogoAjustarPuntos({
             className={`${CLASE_CAMPO} mt-1`}
           />
           <p id={`${id}-ayuda`} className="mt-1 text-sm text-slate-600">
-            Use un número negativo para restar (por ejemplo, -10).
+            Usa un número negativo para restar (por ejemplo, -10).
           </p>
         </div>
       </div>

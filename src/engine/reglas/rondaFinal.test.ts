@@ -138,7 +138,47 @@ describe('ronda final: RF_RESPUESTA', () => {
 
   it('rejects a missing text', () => {
     const evento = { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0 } as Evento;
-    expect(codigoTras(enRondaFinal, evento)).toMatchObject({ codigo: 'TEXTO_INVALIDO' });
+    expect(codigoTras(enRondaFinal, evento)).toEqual({
+      ok: false,
+      codigo: 'TEXTO_INVALIDO',
+      motivo: 'Escribe lo que respondió el jugador.',
+    });
+  });
+
+  it('accepts an empty or blank text for an answer with no match', () => {
+    const estado = jugar(config, [
+      ...enRondaFinal,
+      respuesta(1, 0, null, ''),
+      respuesta(1, 1, null, '   '),
+    ]);
+    expect(estado.advertencias).toEqual([]);
+    expect(estado.rondaFinal?.jugador1.slice(0, 2)).toEqual([
+      { indice: null, texto: '', revelada: false },
+      { indice: null, texto: '   ', revelada: false },
+    ]);
+  });
+
+  it('rejects an empty or blank text for a matched answer (the panel stores its text)', () => {
+    for (const texto of ['', '  ']) {
+      expect(codigoTras(enRondaFinal, respuesta(1, 0, 2, texto))).toEqual({
+        ok: false,
+        codigo: 'TEXTO_INVALIDO',
+        motivo: 'Una respuesta con coincidencia necesita su texto.',
+      });
+    }
+  });
+
+  it('detects a repeat by the matched answer, whatever the text says', () => {
+    const eventos: Evento[] = [
+      ...enRondaFinal,
+      respuesta(1, 0, 1, 'TXT_0_1'),
+      respuesta(1, 1, null, ''),
+      { tipo: 'RF_SIGUIENTE_JUGADOR' },
+    ];
+    expect(codigoTras(eventos, respuesta(2, 0, 1, 'otra cosa'))).toMatchObject({
+      codigo: 'RESPUESTA_REPETIDA',
+    });
+    expect(codigoTras(eventos, respuesta(2, 1, null, ''))).toEqual({ ok: true });
   });
 
   it("rejects player 2 repeating player 1's matched answer on the same question", () => {

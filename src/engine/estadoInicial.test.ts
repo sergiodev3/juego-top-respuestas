@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { crearEstadoInicial, validarConfig } from './index';
+import { PREGUNTAS_RONDA_FINAL, crearEstadoInicial, validarConfig } from './index';
 import type { ConfigPartida } from './index';
 import { congelar, crearConfig, crearPregunta, definido } from './prueba/fabricas';
 
@@ -100,5 +100,9 @@ describe('validarConfig', () => {
         }),
       ),
     ).toEqual(['La pregunta 5 de la ronda final no tiene respuestas.']);
+  });
+
+  it('exposes the final-round size it enforces', () => {
+    expect(PREGUNTAS_RONDA_FINAL).toBe(5);
   });
 });

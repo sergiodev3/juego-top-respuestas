@@ -3,8 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRepositorios } from '@/db/contextoRepositorios';
 import { ErrorPartidaTerminada, ErrorRegistroNoEncontrado } from '@/db/repositorios';
 import { reducir, validar, type ConfigPartida, type EstadoJuego, type Evento } from '@/engine';
+import { useSonidos } from '@/shared/sonido';
 
-import { cargarPartida } from '../dominio';
+import { cargarPartida, sonidoDeEvento } from '../dominio';
 
 /** A partida rebuilt from its snapshot and log, ready to play. */
 export interface PartidaCargada {
@@ -30,11 +31,11 @@ export type CargaPartida =
     }
   | { readonly tipo: 'lista'; readonly partida: PartidaCargada };
 
-const ERROR_GUARDAR = 'No se pudo guardar la acción. El juego sigue como estaba; intente de nuevo.';
+const ERROR_GUARDAR = 'No se pudo guardar la acción. El juego sigue como estaba; intenta de nuevo.';
 
 function mensajeError(causa: unknown): string {
   if (causa instanceof ErrorPartidaTerminada) {
-    return 'La partida ya terminó. Vuelva al inicio para iniciar otra.';
+    return 'La partida ya terminó. Vuelve al inicio para iniciar otra.';
   }
   if (causa instanceof ErrorRegistroNoEncontrado) {
     return causa.message;
@@ -46,10 +47,12 @@ function mensajeError(causa: unknown): string {
  * Loads a partida and drives it: every dispatch is validated by the engine, saved, and only
  * then applied (the state is rebuilt from the saved log). One write at a time: calls made while
  * a save is in flight are ignored, so double clicks never store an event twice. When the game
- * ends the partida is marked `terminada`.
+ * ends the partida is marked `terminada`. Each saved event plays its sound (`sonidoDeEvento`);
+ * loading, undo and failed writes stay silent.
  */
 export function usePartidaEnCurso(partidaId: string) {
   const { partidas } = useRepositorios();
+  const { reproducir } = useSonidos();
   const [carga, setCarga] = useState<CargaPartida>({ tipo: 'cargando' });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +102,7 @@ export function usePartidaEnCurso(partidaId: string) {
         if (vigente) {
           setCarga({
             tipo: 'noDisponible',
-            errores: ['No se pudo leer la partida. Recargue la página para intentar de nuevo.'],
+            errores: ['No se pudo leer la partida. Recarga la página para intentar de nuevo.'],
             existe: false,
             terminada: false,
           });
@@ -112,12 +115,12 @@ export function usePartidaEnCurso(partidaId: string) {
     };
   }, [partidas, partidaId]);
 
-  /** Runs one write at a time and applies the saved log it returns. */
+  /** Runs one write at a time and applies the saved log it returns; `null` when not saved. */
   const escribir = useCallback(
-    async (operacion: (id: string) => Promise<Evento[]>): Promise<boolean> => {
+    async (operacion: (id: string) => Promise<Evento[]>): Promise<EstadoJuego | null> => {
       const vigente = actual.current;
       if (enVuelo.current || vigente.tipo !== 'lista') {
-        return false;
+        return null;
       }
       const { partida } = vigente;
       enVuelo.current = true;
@@ -135,10 +138,10 @@ export function usePartidaEnCurso(partidaId: string) {
           );
         }
         setCarga({ tipo: 'lista', partida: { ...partida, eventos, estado, terminada } });
-        return true;
+        return estado;
       } catch (causa) {
         setError(mensajeError(causa));
-        return false;
+        return null;
       } finally {
         enVuelo.current = false;
         setGuardando(false);
@@ -153,17 +156,26 @@ export function usePartidaEnCurso(partidaId: string) {
       if (vigente.tipo !== 'lista') {
         return false;
       }
-      const resultado = validar(vigente.partida.config, vigente.partida.estado, evento);
+      const { config, estado: antes } = vigente.partida;
+      const resultado = validar(config, antes, evento);
       if (!resultado.ok) {
         setError(resultado.motivo);
         return false;
       }
-      return escribir((id) => partidas.agregarEvento(id, evento));
+      const estado = await escribir((id) => partidas.agregarEvento(id, evento));
+      if (estado === null) {
+        return false;
+      }
+      reproducir(sonidoDeEvento(config, evento, antes, estado));
+      return true;
     },
-    [escribir, partidas],
+    [escribir, partidas, reproducir],
   );
 
-  const deshacer = useCallback(() => escribir((id) => partidas.deshacer(id)), [escribir, partidas]);
+  const deshacer = useCallback(
+    async () => (await escribir((id) => partidas.deshacer(id))) !== null,
+    [escribir, partidas],
+  );
 
   /** Ends a partida that cannot be rebuilt, so a new one can start. */
   const terminarNoDisponible = useCallback(async (): Promise<boolean> => {

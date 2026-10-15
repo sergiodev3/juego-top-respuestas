@@ -16,7 +16,7 @@ export function respuestasDe(
   return config.rondas[ronda.indice]?.pregunta.respuestas ?? [];
 }
 
-function multiplicadorDe(config: ConfigPartida, ronda: EstadoRonda): Multiplicador {
+export function multiplicadorDe(config: ConfigPartida, ronda: EstadoRonda): Multiplicador {
   return config.rondas[ronda.indice]?.multiplicador ?? 1;
 }
 

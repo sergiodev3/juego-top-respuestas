@@ -6,21 +6,26 @@ No React, React DOM, Dexie, or imports from `@/features`, `@/app`, or `@/db` (en
 
 ## Public API (`@/engine`)
 
-| Export                             | Purpose                                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| `crearEstadoInicial(config)`       | Round 1 face-off, scores at 0. Throws if `validarConfig` finds problems.                    |
-| `validarConfig(config): string[]`  | Spanish messages for a malformed snapshot (2-4 teams, >= 1 round, 5 final questions, ...).  |
-| `validar(config, estado, evento)`  | `{ ok: true }` or `{ ok: false, codigo, motivo }`; the panel uses it to enable actions.     |
-| `aplicar(config, estado, evento)`  | Next state for a valid event; throws `EventoRechazadoError` (with `codigo`) otherwise.      |
-| `reducir(config, eventos)`         | Replays a typed log. Expects a valid config (throws otherwise, like `crearEstadoInicial`).  |
-| `reconstruir(config, eventos)`     | Persistence-boundary rebuild from `unknown` data; never throws (see "Undo and replay").     |
-| `esquemaConfigPartida`             | Zod schema for the shape of a stored config snapshot (rules stay in `validarConfig`).       |
-| `esquemaEvento`                    | Zod discriminated union for the shape of every stored event, tied to the `Evento` type.     |
-| `deshacer(eventos)`                | The log without its last event (undo).                                                      |
-| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers. |
-| Types                              | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ...  |
+| Export                             | Purpose                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `crearEstadoInicial(config)`       | Round 1 face-off, scores at 0. Throws if `validarConfig` finds problems.                     |
+| `validarConfig(config): string[]`  | Spanish messages for a malformed snapshot (2-4 teams, >= 1 round, 5 final questions, ...).   |
+| `validar(config, estado, evento)`  | `{ ok: true }` or `{ ok: false, codigo, motivo }`; the panel uses it to enable actions.      |
+| `aplicar(config, estado, evento)`  | Next state for a valid event; throws `EventoRechazadoError` (with `codigo`) otherwise.       |
+| `reducir(config, eventos)`         | Replays a typed log. Expects a valid config (throws otherwise, like `crearEstadoInicial`).   |
+| `reconstruir(config, eventos)`     | Persistence-boundary rebuild from `unknown` data; never throws (see "Undo and replay").      |
+| `esquemaConfigPartida`             | Zod schema for the shape of a stored config snapshot (rules stay in `validarConfig`).        |
+| `esquemaEvento`                    | Zod discriminated union for the shape of every stored event, tied to the `Evento` type.      |
+| `deshacer(eventos)`                | The log without its last event (undo).                                                       |
+| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers.  |
+| `puntosVisibles(config, ronda)`    | Display points of a round (every answer and the pot), already multiplied; used by the panel. |
+| Types                              | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ...   |
 
 Teams are addressed by index (0-3, keys A-D). `ConfigPartida` is a snapshot (teams, rounds with their questions and multipliers, strike limit, optional final round), so replay never depends on the question bank. Answers in a `PreguntaSnapshot` are sorted by points, desc.
+
+Points on display are already multiplied, like on TV: in an x2 round an answer worth 30 shows 60, and the round view's `bolsa` sums the multiplied values, so it is exactly what the round winner gets (`puntosOtorgados`). The engine state keeps base points (`estado.ronda.bolsa`) and the rules apply the multiplier once, when the round is awarded; `proyectarTablero` and `puntosVisibles` are the only places that multiply for display. The final round has no multiplier.
+
+The board's round view carries `fallosCaraACara`, the number of face-off misses this round (separate from `tachas`). It is only a count, stays after the face-off ends (so undoing back into it never raises it) and restarts at 0 each round; the board shows one big X each time it goes up.
 
 ## Phases
 
@@ -57,11 +62,13 @@ Teams are addressed by index (0-3, keys A-D). `ConfigPartida` is a snapshot (tea
 | `SIGUIENTE_RONDA`                                   | finDeRonda                  | Next face-off, the final round, or the end of the game.                                                                                                                                    |
 | `AJUSTAR_PUNTOS(equipo, delta)`                     | any but juegoTerminado      | Manual correction, non-zero integer, scores may go negative.                                                                                                                               |
 | `TERMINAR_JUEGO`                                    | any but juegoTerminado      | End the game.                                                                                                                                                                              |
-| `RF_RESPUESTA { jugador, pregunta, indice, texto }` | rondaFinal                  | Record (or correct) an answer; player 2 repeating player 1 is `RESPUESTA_REPETIDA`.                                                                                                        |
+| `RF_RESPUESTA { jugador, pregunta, indice, texto }` | rondaFinal                  | Record (or correct) an answer; player 2 repeating player 1's `indice` is `RESPUESTA_REPETIDA`. Blank `texto` only without a match (`TEXTO_INVALIDO`).                                      |
 | `RF_REVELAR { jugador, pregunta }`                  | rondaFinal                  | Reveal a recorded answer and its points.                                                                                                                                                   |
 | `RF_SIGUIENTE_JUGADOR` / `RF_TERMINAR`              | rondaFinal                  | Switch to player 2 / end with `{ total, meta, superoMeta }` and add `total` to the playing team's score.                                                                                   |
 
 Rejections carry a stable `codigo` (`FASE_INVALIDA`, `EQUIPO_INVALIDO`, `RESPUESTA_YA_REVELADA`, `SIN_EQUIPO_ROBO`, `RESPUESTA_REPETIDA`, `JUEGO_TERMINADO`, ...) and a user-facing Spanish `motivo`. Replay also reports `EVENTO_MALFORMADO` for a stored event whose shape fails `esquemaEvento`.
+
+Typing is optional in the final round: for a match the panel stores the survey answer's text when the host typed nothing, so a stored `RF_RESPUESTA` always says what the board shows; an unmatched answer may stay blank (the board shows "Sin respuesta").
 
 Final-round scoring: `RF_TERMINAR` adds the final-round total (the revealed answers of both players, the same value as `resultado.total`) to the playing team's score. `TERMINAR_JUEGO` during the final round leaves `resultado: null` and adds nothing.
 

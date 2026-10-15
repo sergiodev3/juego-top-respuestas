@@ -83,7 +83,7 @@ describe('panel <-> board hooks', () => {
 
     panel.rerender({ datos: null });
 
-    expect(tablero.result.current).toEqual({ tipo: 'sinPartida' });
+    expect(tablero.result.current).toEqual({ tipo: 'sinPartida', nombreJuego: VISTA.nombreJuego });
     expect(tipos()).toEqual([
       'SOLICITAR_ESTADO',
       'ESTADO_TABLERO',
@@ -98,7 +98,7 @@ describe('panel <-> board hooks', () => {
 
     panel.unmount();
 
-    expect(tablero.result.current).toEqual({ tipo: 'sinPartida' });
+    expect(tablero.result.current).toEqual({ tipo: 'sinPartida', nombreJuego: VISTA.nombreJuego });
   });
 
   it('shows the board as connected while heartbeats arrive every 2 s', () => {

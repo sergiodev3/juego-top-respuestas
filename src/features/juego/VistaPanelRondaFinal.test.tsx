@@ -47,16 +47,36 @@ const HASTA_RONDA_FINAL: Evento[] = [
   { tipo: 'SIGUIENTE_RONDA' },
 ];
 
-async function crearPartidaFinal() {
+/** Player 1 answers question 1 with the top answer (40 points), then player 2 takes over. */
+const TURNO_JUGADOR_1: Evento[] = [
+  { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0, texto: 'gato' },
+  { tipo: 'RF_REVELAR', jugador: 1, pregunta: 0 },
+  { tipo: 'RF_SIGUIENTE_JUGADOR' },
+];
+
+/** Player 2 answers question 1 with the second answer (25 points). */
+const TURNO_JUGADOR_2: Evento[] = [
+  { tipo: 'RF_RESPUESTA', jugador: 2, pregunta: 0, indice: 1, texto: 'perro' },
+  { tipo: 'RF_REVELAR', jugador: 2, pregunta: 0 },
+];
+
+/**
+ * A partida already in the final round, plus `extra` events. Each test starts from the step
+ * it checks: replaying the whole flow through the UI in one test made it the slowest in the
+ * suite and pushed it past the timeout under full-suite load.
+ */
+async function crearPartidaFinal(extra: Evento[] = []) {
   const partida = await entorno.repositorios.partidas.crear({ juegoId: 'juego-1', config: CONFIG });
-  for (const evento of HASTA_RONDA_FINAL) {
+  for (const evento of [...HASTA_RONDA_FINAL, ...extra]) {
     await entorno.repositorios.partidas.agregarEvento(partida.id, evento);
   }
   return partida.id;
 }
 
-async function eventosGuardados(id: string): Promise<Evento[]> {
-  return (await entorno.repositorios.partidas.obtener(id))?.eventos ?? [];
+/** Events saved after `antes`, i.e. the ones the test produced through the panel. */
+async function eventosNuevos(id: string, antes: Evento[]): Promise<Evento[]> {
+  const eventos = (await entorno.repositorios.partidas.obtener(id))?.eventos ?? [];
+  return eventos.slice(HASTA_RONDA_FINAL.length + antes.length);
 }
 
 type Usuario = ReturnType<typeof renderizarPanel>['usuario'];
@@ -80,8 +100,86 @@ async function registrar(
   );
 }
 
+/** Waits until the highlighted current question is `numero` (1-based). */
+async function esperarPreguntaActual(numero: number) {
+  await waitFor(() => {
+    const lista = screen.getByRole('list', { name: 'Preguntas de la ronda final' });
+    expect(within(lista).getByRole('listitem', { current: 'step' })).toHaveTextContent(
+      `Pregunta ${String(numero)}:`,
+    );
+  });
+}
+
+function respuestaJugador1(pregunta: number, indice: number | null, texto: string): Evento {
+  return { tipo: 'RF_RESPUESTA', jugador: 1, pregunta, indice, texto };
+}
+
+describe('VistaPanel: final round keyboard', () => {
+  it('records the five answers with digits and Enter only, without typing', async () => {
+    const id = await crearPartidaFinal();
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+    await screen.findByRole('heading', { name: 'Ronda final' });
+
+    for (const [numero, teclas] of ['1', '2', '0', '3', '4'].entries()) {
+      await esperarPreguntaActual(numero + 1);
+      await usuario.keyboard(`${teclas}{Enter}`);
+    }
+
+    expect(
+      await screen.findByText(/El jugador 1 ya respondió las 5 preguntas/u),
+    ).toBeInTheDocument();
+    expect(await eventosNuevos(id, [])).toEqual([
+      respuestaJugador1(0, 0, 'TXT_F1_0'),
+      respuestaJugador1(1, 1, 'TXT_F2_1'),
+      respuestaJugador1(2, null, ''),
+      respuestaJugador1(3, 2, 'TXT_F4_2'),
+      respuestaJugador1(4, 3, 'TXT_F5_3'),
+    ]);
+    expect(
+      screen.getByRole('list', { name: 'Respuestas registradas de la pregunta 3' }),
+    ).toHaveTextContent('Jugador 1: Sin respuesta → Sin coincidencia (0 pts)');
+  });
+
+  it('records once with Enter in the answer field and moves to the next question', async () => {
+    const id = await crearPartidaFinal();
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+
+    await esperarPreguntaActual(1);
+    await usuario.selectOptions(
+      screen.getByLabelText('Coincidencia del jugador 1 en la pregunta 1'),
+      '1. TXT_F1_0 (40 pts)',
+    );
+    await usuario.type(
+      screen.getByLabelText('Respuesta del jugador 1 a la pregunta 1'),
+      'gato 2{Enter}',
+    );
+    await esperarPreguntaActual(2);
+    // The digit and the space stayed text, and the window shortcut did not record again.
+    expect(screen.getByRole('status', { name: 'Aviso del teclado' })).toBeEmptyDOMElement();
+    expect(await eventosNuevos(id, [])).toEqual([respuestaJugador1(0, 0, 'gato 2')]);
+  });
+
+  it('warns about a repeat picked with the keyboard and does not record it', async () => {
+    const id = await crearPartidaFinal(TURNO_JUGADOR_1);
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+    await esperarPreguntaActual(1);
+
+    await usuario.keyboard('1');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Respuesta repetida');
+    await usuario.keyboard('{Enter}');
+    expect(screen.getByRole('status', { name: 'Aviso del teclado' })).toHaveTextContent(
+      'El primer jugador ya dio esa respuesta. Pide otra.',
+    );
+    await usuario.keyboard('2{Enter}');
+    await esperarPreguntaActual(2);
+    expect(await eventosNuevos(id, TURNO_JUGADOR_1)).toEqual([
+      { tipo: 'RF_RESPUESTA', jugador: 2, pregunta: 0, indice: 1, texto: 'TXT_F1_1' },
+    ]);
+  });
+});
+
 describe('VistaPanel: final round', () => {
-  it('records answers, warns about repeats, switches player and adds the total on finish', async () => {
+  it('records and reveals an answer, then switches player with hidden answers', async () => {
     const id = await crearPartidaFinal();
     const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
 
@@ -103,10 +201,16 @@ describe('VistaPanel: final round', () => {
     expect(
       screen.getByRole('list', { name: 'Respuestas registradas de la pregunta 1' }),
     ).toHaveTextContent('Oculta mientras juega el jugador 2');
+    expect(await eventosNuevos(id, [])).toEqual(TURNO_JUGADOR_1);
+  });
+
+  it('warns about a repeated answer and blocks it until another match is chosen', async () => {
+    const id = await crearPartidaFinal(TURNO_JUGADOR_1);
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
 
     await registrar(usuario, 2, 1, 'perro', '1. TXT_F1_0 (40 pts)');
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Respuesta repetida: pida otra respuesta.',
+      'Respuesta repetida: pide otra respuesta.',
     );
     const boton = screen.getByRole('button', { name: 'Registrar la respuesta de la pregunta 1' });
     expect(boton).toHaveAttribute('aria-disabled', 'true');
@@ -121,6 +225,13 @@ describe('VistaPanel: final round', () => {
       await botonHabilitado('Revelar la respuesta del jugador 2 en la pregunta 1'),
     );
     expect(await screen.findByText('Total: 65 de 200 puntos')).toBeInTheDocument();
+    expect(await eventosNuevos(id, TURNO_JUGADOR_1)).toEqual(TURNO_JUGADOR_2);
+  });
+
+  it('adds the final-round total to the playing team on finish, after confirming', async () => {
+    const antes = [...TURNO_JUGADOR_1, ...TURNO_JUGADOR_2];
+    const id = await crearPartidaFinal(antes);
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
 
     await usuario.click(await botonHabilitado('Terminar ronda final'));
     const dialogo = await screen.findByRole('dialog', { name: '¿Terminar la ronda final?' });
@@ -137,14 +248,7 @@ describe('VistaPanel: final round', () => {
     expect(screen.getByText(/Ronda final: 65 de 200 puntos\./u)).toHaveTextContent(
       'No alcanzaron la meta.',
     );
-    expect((await eventosGuardados(id)).slice(HASTA_RONDA_FINAL.length)).toEqual([
-      { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0, texto: 'gato' },
-      { tipo: 'RF_REVELAR', jugador: 1, pregunta: 0 },
-      { tipo: 'RF_SIGUIENTE_JUGADOR' },
-      { tipo: 'RF_RESPUESTA', jugador: 2, pregunta: 0, indice: 1, texto: 'perro' },
-      { tipo: 'RF_REVELAR', jugador: 2, pregunta: 0 },
-      { tipo: 'RF_TERMINAR' },
-    ]);
+    expect(await eventosNuevos(id, antes)).toEqual([{ tipo: 'RF_TERMINAR' }]);
     expect((await entorno.repositorios.partidas.obtener(id))?.estado).toBe('terminada');
   });
 

@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-import type { ConfigPartida, EstadoJuego } from '@/engine';
+import { puntosVisibles, type ConfigPartida, type EstadoJuego } from '@/engine';
 
 import { letraEquipo } from '../dominio';
 import { BotonAccion } from './BotonAccion';
@@ -45,7 +45,7 @@ function papeles(estado: EstadoJuego, equipo: number): string[] {
   return lista;
 }
 
-/** Scores with keys A-D, team roles, strikes and the round pot. */
+/** Scores with keys A-D, team roles, strikes and the round pot (multiplied, as on the board). */
 export function MarcadorPanel({ config, estado, ajustar, onAjustar }: MarcadorPanelProps) {
   const id = useId();
   const ronda = estado.rondaFinal === null ? estado.ronda : null;
@@ -112,7 +112,10 @@ export function MarcadorPanel({ config, estado, ajustar, onAjustar }: MarcadorPa
           <span aria-hidden="true" className="text-xl font-black text-red-700">
             {'X'.repeat(ronda.tachas)}
           </span>
-          <p className="font-semibold text-slate-900">Puntos en juego: {ronda.bolsa}</p>
+          {/* Already multiplied, like the board: what the team wins if the round ends now. */}
+          <p className="font-semibold text-slate-900">
+            Puntos en juego: {puntosVisibles(config, ronda).bolsa}
+          </p>
         </div>
       )}
     </section>
