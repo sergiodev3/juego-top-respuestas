@@ -193,6 +193,49 @@ describe('Panel keyboard shortcuts', () => {
     expect(await eventosGuardados(id)).toHaveLength(0);
   });
 
+  it('announces that the previous move is still saving and drops the shortcut', async () => {
+    const id = await crearPartida(EN_JUEGO);
+    let soltar: () => void = () => undefined;
+    const retenido = new Promise<void>((resolver) => {
+      soltar = resolver;
+    });
+    const { partidas } = entorno.repositorios;
+    const { usuario } = renderizarPanel({
+      repositorios: {
+        ...entorno.repositorios,
+        partidas: {
+          ...partidas,
+          agregarEvento: async (partidaId: string, evento: Evento) => {
+            await retenido;
+            return partidas.agregarEvento(partidaId, evento);
+          },
+        },
+      },
+      partidaId: id,
+    });
+    await screen.findByRole('heading', { name: 'Juego de prueba' });
+
+    await usuario.keyboard('2');
+    await usuario.keyboard('3');
+    expect(avisoTeclado()).toHaveTextContent(
+      'Espere un momento: se está guardando la jugada anterior.',
+    );
+    expect(fireEvent.keyDown(document.body, { key: ' ' })).toBe(false);
+    // Mute and help never touch the saved log, so they keep working during a save.
+    await usuario.keyboard('m');
+    expect(screen.getByRole('button', { name: 'Silenciar sonido' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    soltar();
+    await esperarEventos(id, EN_JUEGO.length + 1, { tipo: 'REVELAR', indice: 1 });
+    await waitFor(() => {
+      expect(avisoTeclado()).toBeEmptyDOMElement();
+    });
+    expect(await eventosGuardados(id)).toHaveLength(EN_JUEGO.length + 1);
+  });
+
   it('ignores shortcuts with Ctrl, Alt or Meta and repeated key presses', async () => {
     const { id, usuario } = await abrirPanel(EN_JUEGO);
 
@@ -272,6 +315,37 @@ describe('Panel keyboard shortcuts', () => {
     expect(sonidos.reproducidos).toEqual(['tache']);
 
     await usuario.type(campo, 's');
+    expect(sonidos.reproducidos).toEqual(['tache']);
+
+    await usuario.selectOptions(coincidencia, '2. TXT_F1_1 (25 pts)');
+    await usuario.selectOptions(coincidencia, '1. TXT_F1_0 (40 pts)');
+    expect(sonidos.reproducidos).toEqual(['tache', 'tache']);
+  });
+
+  it('does not replay the repeat buzzer when the sound setup changes', async () => {
+    const id = await crearPartida(
+      [
+        ...HASTA_RONDA_FINAL,
+        { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0, texto: 'gato' },
+        { tipo: 'RF_SIGUIENTE_JUGADOR' },
+      ],
+      CONFIG_FINAL,
+    );
+    const { usuario, sonidos, renovarReproductor } = renderizarPanel({
+      repositorios: entorno.repositorios,
+      partidaId: id,
+    });
+    const campo = await screen.findByLabelText('Respuesta del jugador 2 a la pregunta 1');
+    const coincidencia = screen.getByLabelText('Coincidencia del jugador 2 en la pregunta 1');
+    await usuario.type(campo, 'perro');
+    await usuario.selectOptions(coincidencia, '1. TXT_F1_0 (40 pts)');
+    expect(sonidos.reproducidos).toEqual(['tache']);
+
+    const silenciar = screen.getByRole('button', { name: 'Silenciar sonido' });
+    await usuario.click(silenciar);
+    await usuario.click(silenciar);
+    renovarReproductor();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Respuesta repetida');
     expect(sonidos.reproducidos).toEqual(['tache']);
 
     await usuario.selectOptions(coincidencia, '2. TXT_F1_1 (25 pts)');

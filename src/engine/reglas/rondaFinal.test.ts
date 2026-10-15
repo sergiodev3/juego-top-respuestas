@@ -138,7 +138,11 @@ describe('ronda final: RF_RESPUESTA', () => {
 
   it('rejects a missing text', () => {
     const evento = { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0 } as Evento;
-    expect(codigoTras(enRondaFinal, evento)).toMatchObject({ codigo: 'TEXTO_INVALIDO' });
+    expect(codigoTras(enRondaFinal, evento)).toEqual({
+      ok: false,
+      codigo: 'TEXTO_INVALIDO',
+      motivo: 'Escriba lo que respondió el jugador.',
+    });
   });
 
   it("rejects player 2 repeating player 1's matched answer on the same question", () => {
@@ -151,7 +155,7 @@ describe('ronda final: RF_RESPUESTA', () => {
     expect(codigoTras(eventos, respuesta(2, 0, 1))).toEqual({
       ok: false,
       codigo: 'RESPUESTA_REPETIDA',
-      motivo: 'El primer jugador ya dio esa respuesta. Pide otra.',
+      motivo: 'El primer jugador ya dio esa respuesta. Pida otra.',
     });
     expect(codigoTras(eventos, respuesta(2, 0, 2))).toEqual({ ok: true });
     expect(codigoTras(eventos, respuesta(2, 2, 1))).toEqual({ ok: true });

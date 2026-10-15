@@ -98,7 +98,7 @@ function pasar(
   if (equipo === ganador) {
     return rechazar(
       'EQUIPO_INVALIDO',
-      'Pasa el turno a un equipo distinto del que ganó el cara a cara.',
+      'Pase el turno a un equipo distinto del que ganó el cara a cara.',
     );
   }
   return tomarControl(config, estado, ronda, equipo);

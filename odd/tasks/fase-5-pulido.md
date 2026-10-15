@@ -29,7 +29,7 @@ Fase 4 is fully playable but mouse-only, silent and static. The SPEC (sections 5
 - [x] T5.2 Keyboard shortcuts: `1`–`8` revelar (ROBO_EXITOSO in robo), `X` tache (robo fallido in robo), `A`–`D` asignar turno, `Z` deshacer, `Espacio` siguiente (the phase's next step: siguiente ronda / jugar…), `R` revelar todas, `M` silenciar, `?` help sheet dialog listing shortcuts; final-round mapping documented in the sheet; guards for inputs/dialogs/modifiers; disabled actions announce their reason (route: delegated writer; test-first with jsdom key events)
 - [x] T5.3 Board animations: answer flip on reveal, big red X overlay on tache (1 / 2 / 3 X), score count-up when points are awarded, final-round reveals; reduced-motion fallback (route: delegated writer; test-first where deterministic — what is rendered after the animation, reduced-motion path)
 - [x] T5.4 Projector polish: very large type and high contrast tuned for a projector (clamp-based sizes), waiting screen with the game name (keep last known name after `SIN_PARTIDA`), round title card (game name, "Ronda N", multiplier) at round start, hide the cursor after 3 s of inactivity on the board (route: delegated writer; test-first for the cursor timer and waiting screen)
-- [ ] T5.5 Fase 4 follow-ups: engine `motivo` strings in "usted"; export `PREGUNTAS_RONDA_FINAL` from `@/engine` and remove the duplicate in `shared/modelo`; Inicio "Continuar partida" shows a neutral loading state instead of the disabled card (route: delegated writer or inline depending on size; tests updated)
+- [x] T5.5 Fase 4 follow-ups: engine `motivo` strings in "usted"; export `PREGUNTAS_RONDA_FINAL` from `@/engine` and remove the duplicate in `shared/modelo`; Inicio "Continuar partida" shows a neutral loading state instead of the disabled card (route: delegated writer or inline depending on size; tests updated)
 - [x] T5.7 Face-off miss X (added by user decision after T5.3): expose face-off misses in the projection (`proyectarTablero`) and the sync schema (`esquemaVistaTablero`, both-ways type test), and show one big red X on the board for each face-off miss without touching the 3-strike count (route: delegated writer — engine + sync + board; test-first, engine coverage gate)
 - [ ] T5.6 Verify (typecheck, lint, format:check, test, build), work-unit commits per task, RDD per commit range, update CLAUDE.md (Fase 5 section)
 
@@ -78,6 +78,11 @@ Runner: Vitest. Pure pieces (event→sound mapping, mute store, shortcut→actio
 
 - T5.4 commit `0041805`; RDD medium (range `120482f..0041805` incl. T5.7, 26 files / 832 lines); user granted (after the 2026-10-14 pause); review-reliability approved; acknowledged (lineage review-df1ca7f6388d0b92). Last reviewed commit: `0041805`. Advisory (W): `src/engine/README.md:20` table row merged with the "Types" row → fixed inline (route: inline — one passive doc line).
 
+- T5.5 (delegated writer): 8 engine strings to "usted" (7 defaults in `rechazos.ts` + 1 in `reglas/caraACara.ts`; `codigo` unchanged; 5 assertions updated, table test added); `PREGUNTAS_RONDA_FINAL` exported from `@/engine` and re-exported by `shared/modelo`; Inicio shows a neutral "Buscando una partida en curso…" card (`aria-busy`) while loading; shortcuts during a save announce "Espere un momento: se está guardando la jugada anterior."; the repeated-answer buzzer plays only on the false → true transition (ref), harness gained `renovarReproductor()` to make a real RED. RED → GREEN: engine 9 failed → 277/277; constant 1 → green; Inicio 1 → green; save message 1 → green; buzzer 1 → green. Writer: typecheck, lint, format clean; coverage engine lines 97.88 / branches 92.74 / functions 100; test 602–601 of 603 (flakes only). ~260 authored lines.
+  - Parent (inline, one mechanical line + test): M and ? keep working during a save (they never touch the log). RED: aria-pressed stayed `false` → GREEN 18/18; lint, typecheck, format clean.
+  - New flake under full-suite load: `src/app/rutaTablero.test.tsx` → T5.6.
+  - Found: most of the app outside the panel still uses "tú" (Inicio, banco, importar, respaldos, Zod messages in `shared/modelo`) → product question to the user (one form for the whole app).
+
 ## Next step
 
-T5.5 follow-ups.
+Commit T5.5; ask the user tú vs usted for the whole app; then T5.6.

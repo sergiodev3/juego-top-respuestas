@@ -41,8 +41,24 @@ const CLASE_TARJETA_ACTIVA = cx(
 
 function TarjetaContinuar() {
   const repositorios = useRepositorios();
-  const partida = useLiveQuery(() => repositorios.partidas.obtenerEnCurso(), [repositorios]);
+  // Wrapped so `undefined` means "still loading" and `{ partida: undefined }` means "none".
+  const consulta = useLiveQuery(
+    async () => ({ partida: await repositorios.partidas.obtenerEnCurso() }),
+    [repositorios],
+  );
 
+  if (consulta === undefined) {
+    return (
+      <div
+        aria-busy="true"
+        className={cx(CLASE_TARJETA, 'border-slate-200 bg-white text-slate-500')}
+      >
+        <h2 className="text-xl font-semibold">Continuar partida</h2>
+        <p>Buscando una partida en curso…</p>
+      </div>
+    );
+  }
+  const { partida } = consulta;
   if (partida === undefined) {
     return (
       <div

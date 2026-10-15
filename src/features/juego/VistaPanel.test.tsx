@@ -105,7 +105,7 @@ describe('VistaPanel: loading and layout', () => {
 
     const tache = await screen.findByRole('button', { name: 'Tache' });
     expect(tache).toHaveAttribute('aria-disabled', 'true');
-    expect(tache).toHaveAccessibleDescription('Primero indica qué equipo presionó el botón.');
+    expect(tache).toHaveAccessibleDescription('Primero indique qué equipo presionó el botón.');
     expect(screen.getByRole('button', { name: 'Revelar la respuesta 1' })).toHaveAttribute(
       'aria-disabled',
       'true',
@@ -259,7 +259,7 @@ describe('VistaPanel: rounds and teams', () => {
     const propio = await screen.findByRole('button', { name: 'Pasar a Rojos' });
     expect(propio).toHaveAttribute('aria-disabled', 'true');
     expect(propio).toHaveAccessibleDescription(
-      'Pasa el turno a un equipo distinto del que ganó el cara a cara.',
+      'Pase el turno a un equipo distinto del que ganó el cara a cara.',
     );
     await pulsar(usuario, 'Pasar a Azules');
 

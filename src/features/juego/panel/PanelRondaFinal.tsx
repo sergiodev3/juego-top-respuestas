@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import type {
   ConfigPartida,
@@ -104,13 +104,16 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
     coincidencia === SIN_ELEGIR || coincidencia === SIN_COINCIDENCIA ? null : Number(coincidencia);
   const responder = acciones.rfResponder(jugador, indice, indiceElegido, texto.trim());
   const repetida = coincidencia !== SIN_ELEGIR && responder.codigo === 'RESPUESTA_REPETIDA';
+  const repetidaAntes = useRef(false);
 
   useEffect(() => {
     // TV-show buzzer when the host picks an answer the other player already gave (UI only: the
-    // engine rejects a repeat, so nothing is saved and no event sound plays).
-    if (repetida) {
+    // engine rejects a repeat, so nothing is saved and no event sound plays). Only the change
+    // to repeated plays it, so a new `reproducir` (sound setup change) never replays it.
+    if (repetida && !repetidaAntes.current) {
       reproducir('tache');
     }
+    repetidaAntes.current = repetida;
   }, [repetida, reproducir]);
 
   if (rondaFinal === null) {

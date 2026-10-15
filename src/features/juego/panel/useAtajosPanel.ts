@@ -7,6 +7,7 @@ import type { AccionesPanel, AccionPanel } from './useAccionesPanel';
 import type { ControlTemporizador } from './useTemporizador';
 
 const MOTIVO_SIN_TIEMPO = 'El tiempo terminó. Use «Reiniciar tiempo» para empezar de nuevo.';
+const MOTIVO_GUARDANDO = 'Espere un momento: se está guardando la jugada anterior.';
 const CAMPOS_DE_TEXTO = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
 
 export interface OpcionesAtajos {
@@ -58,8 +59,9 @@ function accionDe(comando: ComandoAtajo, acciones: AccionesPanel): AccionPanel |
  * action puts its reason in `aviso` (render it in a polite live region).
  *
  * Ignored while typing in a field, while any dialog is open (`?` still closes the help sheet),
- * with Ctrl/Alt/Meta, on auto-repeat and while a save is in flight. The space bar always
- * belongs to the shortcut: it never activates the focused button (Enter does).
+ * with Ctrl/Alt/Meta and on auto-repeat. While a save is in flight a shortcut does nothing and
+ * `aviso` asks the host to wait. The space bar always belongs to the shortcut: it never
+ * activates the focused button (Enter does).
  */
 export function useAtajosPanel(opciones: OpcionesAtajos) {
   const [aviso, setAviso] = useState<string | null>(null);
@@ -128,7 +130,7 @@ export function useAtajosPanel(opciones: OpcionesAtajos) {
         evento.preventDefault();
         espacioConsumido.current = true;
       }
-      if (evento.repeat || guardando) {
+      if (evento.repeat) {
         return;
       }
       const comando = comandoDeTecla(evento.key, {
@@ -141,6 +143,11 @@ export function useAtajosPanel(opciones: OpcionesAtajos) {
         return;
       }
       evento.preventDefault();
+      // Mute and help never touch the saved log, so only game actions wait for the save.
+      if (guardando && comando.tipo !== 'silenciar' && comando.tipo !== 'ayuda') {
+        setAviso(MOTIVO_GUARDANDO);
+        return;
+      }
       setAviso(null);
       ejecutar(comando);
     }

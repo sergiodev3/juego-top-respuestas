@@ -45,7 +45,7 @@ describe('evaluarAccion', () => {
     expect(evaluarAccion(config, inicial, { tipo: 'TACHE' })).toEqual({
       evento: { tipo: 'TACHE' },
       habilitada: false,
-      motivo: 'Primero indica qué equipo presionó el botón.',
+      motivo: 'Primero indique qué equipo presionó el botón.',
       codigo: 'SIN_RESPONDEDOR',
     });
   });

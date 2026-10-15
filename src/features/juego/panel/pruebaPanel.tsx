@@ -15,6 +15,7 @@ import {
   SonidosProvider,
   type AlmacenamientoSilencio,
   type NombreSonido,
+  type ReproductorSonidos,
 } from '@/shared/sonido';
 import { crearCanal, type MensajeEstadoTablero, type MensajeSync } from '@/shared/sync';
 import { CanalSyncProvider } from '@/shared/sync';
@@ -113,16 +114,37 @@ export function renderizarPanel({
     ],
     { initialEntries: [ruta] },
   );
-  const resultado = render(
+  const canal = crearCanal(bus.crearTransporte());
+  const arbol = (reproductor: ReproductorSonidos) => (
     <RepositoriosProvider repositorios={repositorios}>
-      <CanalSyncProvider canal={crearCanal(bus.crearTransporte())}>
-        <SonidosProvider reproductor={sonidos.reproductor} silencio={sonidos.silencio}>
+      <CanalSyncProvider canal={canal}>
+        <SonidosProvider reproductor={reproductor} silencio={sonidos.silencio}>
           <RouterProvider router={router} />
         </SonidosProvider>
       </CanalSyncProvider>
-    </RepositoriosProvider>,
+    </RepositoriosProvider>
   );
-  return { ...resultado, bus, ventanas, reloj, sonidos, router, usuario: userEvent.setup() };
+  const resultado = render(arbol(sonidos.reproductor));
+  /** Re-renders with a new player object (same recorder), so `reproducir` changes identity. */
+  function renovarReproductor() {
+    resultado.rerender(
+      arbol({
+        reproducir(nombre) {
+          sonidos.reproductor.reproducir(nombre);
+        },
+      }),
+    );
+  }
+  return {
+    ...resultado,
+    bus,
+    ventanas,
+    reloj,
+    sonidos,
+    router,
+    renovarReproductor,
+    usuario: userEvent.setup(),
+  };
 }
 
 /** The action button, once it is enabled (the previous action finished saving). */

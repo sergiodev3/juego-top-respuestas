@@ -8,8 +8,8 @@ export const TACHAS_MAXIMAS_PREDETERMINADAS = 3;
 export const SEGUNDOS_RONDA_FINAL_PREDETERMINADOS: [number, number] = [20, 25];
 export const META_RONDA_FINAL_PREDETERMINADA = 200;
 export const MAX_RONDAS_PREDETERMINADAS = 4;
-/** The final round always has exactly this many questions (mirrors the engine rule). */
-export const PREGUNTAS_RONDA_FINAL = 5;
+/** The final round always has exactly this many questions; the engine owns the rule. */
+export { PREGUNTAS_RONDA_FINAL } from '@/engine';
 
 /**
  * Team colors, all dark enough for white text (WCAG AA) and distinct from each other.

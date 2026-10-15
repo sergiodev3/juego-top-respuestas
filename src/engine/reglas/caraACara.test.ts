@@ -296,3 +296,47 @@ describe('cara a cara: other events', () => {
     ).toMatchObject({ respondedor: 0 });
   });
 });
+
+describe('cara a cara: rejection reasons for the host', () => {
+  const tresEquipos = crearConfig({ equipos: 3 });
+
+  it.each<[string, ConfigPartida, Evento[], Evento, string]>([
+    [
+      'an unknown team',
+      config,
+      [],
+      { tipo: 'ASIGNAR_TURNO', equipo: 5 },
+      'Elija un equipo válido.',
+    ],
+    [
+      'a miss before anyone buzzed',
+      config,
+      [],
+      { tipo: 'TACHE' },
+      'Primero indique qué equipo presionó el botón.',
+    ],
+    [
+      'an answer after the face-off is won',
+      config,
+      caraACaraGanado(0),
+      { tipo: 'REVELAR', indice: 1 },
+      'El cara a cara ya tiene ganador: elija jugar o pasar.',
+    ],
+    [
+      'a pass without a team among 3 teams',
+      tresEquipos,
+      caraACaraGanado(0),
+      { tipo: 'PASAR' },
+      'Indique a qué equipo se le pasa el turno.',
+    ],
+    [
+      'a pass to the winner',
+      tresEquipos,
+      caraACaraGanado(0),
+      { tipo: 'PASAR', equipo: 0 },
+      'Pase el turno a un equipo distinto del que ganó el cara a cara.',
+    ],
+  ])('addresses the host formally for %s', (_, cfg, eventos, evento, motivo) => {
+    expect(rechazoTras(cfg, eventos, evento)).toMatchObject({ ok: false, motivo });
+  });
+});
