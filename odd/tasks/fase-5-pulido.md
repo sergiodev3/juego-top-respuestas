@@ -96,6 +96,8 @@ Runner: Vitest. Pure pieces (event→sound mapping, mute store, shortcut→actio
   - CLAUDE.md: Fase 5 section (sounds, shortcuts, animations, board polish, motion testing, lazy routes), `npm run sonidos`, deps pinned ≥ 2 weeks, "tú" convention, `wav` precache, `maxWorkers`, `precargarRutas`.
   - Parent spot check: full suite 62 files / 608 passed, lint 0, build main chunk 440.17 kB with no size warning.
 
+- T5.6 commit `74be2a9`; RDD medium (range `0041805..74be2a9` incl. T5.5, T5.8 and the README fix, 38 files / 635 lines); user granted; review-reliability approved with no advisories; acknowledged (lineage review-e3d458dcd2d7b3b6). Last reviewed commit: `74be2a9`.
+
 ## Next step
 
-Commit T5.6, RDD (range from `0041805`), phase summary and wait for the user's approval.
+User manual test (projector sizes, sounds, shortcuts, animations) and approval before Fase 6. Push / PR / merge are the user's decision.
