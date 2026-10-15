@@ -26,20 +26,25 @@ function imprimirConNavegador() {
 
 const OPCIONES_POR_HOJA: readonly TarjetasPorHoja[] = [2, 4];
 
-function rutaDeSeleccion(fuente: FuenteImpresion, porHoja: TarjetasPorHoja): string {
+function rutaDeSeleccion(
+  fuente: FuenteImpresion,
+  porHoja: TarjetasPorHoja,
+  marcador: boolean,
+): string {
   return fuente.tipo === 'set'
-    ? rutaImpresion({ set: fuente.id, porHoja })
-    : rutaImpresion({ juego: fuente.id, porHoja });
+    ? rutaImpresion({ set: fuente.id, porHoja, marcador })
+    : rutaImpresion({ juego: fuente.id, porHoja, marcador });
 }
 
 /**
  * `/impresion`: printable host cards for a set (`?set=<id>`) or a saved game (`?juego=<id>`),
- * 2 or 4 per letter sheet (`?por-hoja=4`). Without a usable source it shows a picker. The
+ * 2 or 4 per letter sheet (`?por-hoja=4`), optionally followed by a paper scoreboard sheet
+ * (`?marcador=1`). Without a usable source it shows a picker. The
  * on-screen preview is what prints; the app shell and these controls are hidden in print.
  */
 export function VistaImpresion({ imprimir = imprimirConNavegador }: VistaImpresionProps) {
   const [parametros] = useSearchParams();
-  const { fuente, porHoja } = leerSeleccion(parametros);
+  const { fuente, porHoja, marcador } = leerSeleccion(parametros);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 print:max-w-none print:space-y-0">
@@ -60,6 +65,7 @@ export function VistaImpresion({ imprimir = imprimirConNavegador }: VistaImpresi
           key={`${fuente.tipo}-${fuente.id}`}
           fuente={fuente}
           porHoja={porHoja}
+          marcador={marcador}
           imprimir={imprimir}
         />
       )}
@@ -70,10 +76,11 @@ export function VistaImpresion({ imprimir = imprimirConNavegador }: VistaImpresi
 interface VistaPreviaProps {
   fuente: FuenteImpresion;
   porHoja: TarjetasPorHoja;
+  marcador: boolean;
   imprimir: () => void;
 }
 
-function VistaPrevia({ fuente, porHoja, imprimir }: VistaPreviaProps) {
+function VistaPrevia({ fuente, porHoja, marcador, imprimir }: VistaPreviaProps) {
   const id = useId();
   const navigate = useNavigate();
   const datos = useTarjetasImpresion(fuente);
@@ -103,7 +110,9 @@ function VistaPrevia({ fuente, porHoja, imprimir }: VistaPreviaProps) {
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4 rounded-lg border border-slate-300 bg-white p-4 print:hidden">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">{datos.titulo}</h2>
-          <p className="text-slate-700">{resumenImpresion(datos.tarjetas.length, hojas)}</p>
+          <p className="text-slate-700">
+            {resumenImpresion(datos.tarjetas.length, hojas, marcador)}
+          </p>
         </div>
         <fieldset>
           <legend className="text-sm font-semibold text-slate-800">Tarjetas por hoja</legend>
@@ -116,7 +125,7 @@ function VistaPrevia({ fuente, porHoja, imprimir }: VistaPreviaProps) {
                   value={opcion}
                   checked={porHoja === opcion}
                   onChange={() => {
-                    void navigate(rutaDeSeleccion(fuente, opcion), { replace: true });
+                    void navigate(rutaDeSeleccion(fuente, opcion, marcador), { replace: true });
                   }}
                   className="size-4"
                 />
@@ -125,6 +134,17 @@ function VistaPrevia({ fuente, porHoja, imprimir }: VistaPreviaProps) {
             ))}
           </div>
         </fieldset>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={marcador}
+            onChange={() => {
+              void navigate(rutaDeSeleccion(fuente, porHoja, !marcador), { replace: true });
+            }}
+            className="size-4"
+          />
+          Incluir hoja de marcador
+        </label>
         <div className="flex flex-wrap items-center gap-4">
           <button
             type="button"
@@ -143,7 +163,11 @@ function VistaPrevia({ fuente, porHoja, imprimir }: VistaPreviaProps) {
           </Link>
         </div>
       </div>
-      <HojasImpresion tarjetas={datos.tarjetas} porHoja={porHoja} />
+      <HojasImpresion
+        tarjetas={datos.tarjetas}
+        porHoja={porHoja}
+        marcador={marcador ? datos.marcador : null}
+      />
     </>
   );
 }

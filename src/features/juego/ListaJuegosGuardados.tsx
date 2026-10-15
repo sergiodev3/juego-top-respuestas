@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 
 import { useRepositorios } from '@/db/contextoRepositorios';
 import type { Juego } from '@/shared/modelo';
-import { rutaConfigurarJuego } from '@/shared/rutas';
+import { rutaConfigurarJuego, rutaImpresion } from '@/shared/rutas';
 import { AvisoError } from '@/shared/ui/AvisoError';
 import { CLASE_BOTON_ACCION, CLASE_BOTON_ACCION_PELIGRO } from '@/shared/ui/clases';
 import { DialogoConfirmacion } from '@/shared/ui/DialogoConfirmacion';
@@ -13,7 +13,7 @@ import { validarParaIniciar } from './dominio';
 import { textoRondas } from './textos';
 import { prepararConfigPartida, useIniciarPartida } from './useIniciarPartida';
 
-/** Saved games (most recently updated first) with edit, start and delete actions. */
+/** Saved games (most recently updated first) with edit, start, print and delete actions. */
 export function ListaJuegosGuardados() {
   const repositorios = useRepositorios();
   const id = useId();
@@ -115,6 +115,13 @@ export function ListaJuegosGuardados() {
                 >
                   Iniciar
                 </button>
+                <Link
+                  to={rutaImpresion({ juego: juego.id })}
+                  className={CLASE_BOTON_ACCION}
+                  aria-label={`Imprimir tarjetas del juego ${juego.nombre}`}
+                >
+                  Imprimir tarjetas
+                </Link>
                 <button
                   type="button"
                   className={CLASE_BOTON_ACCION_PELIGRO}

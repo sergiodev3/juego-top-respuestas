@@ -3,10 +3,17 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRepositorios } from '@/db/contextoRepositorios';
 import type { Pregunta } from '@/shared/modelo';
 
-import { crearTarjetas, type FuenteImpresion, type Tarjeta } from './dominio';
+import {
+  crearMarcador,
+  crearTarjetas,
+  type FuenteImpresion,
+  type Marcador,
+  type Tarjeta,
+} from './dominio';
 
 export type DatosImpresion =
-  | { estado: 'listo'; titulo: string; tarjetas: Tarjeta[] }
+  /** `marcador` is the optional paper scoreboard of the same source. */
+  | { estado: 'listo'; titulo: string; tarjetas: Tarjeta[]; marcador: Marcador }
   /** The source is unknown, deleted or empty: `mensaje` explains it above the picker. */
   | { estado: 'noDisponible'; mensaje: string };
 
@@ -33,6 +40,7 @@ export function useTarjetasImpresion(fuente: FuenteImpresion): DatosImpresion | 
         estado: 'listo',
         titulo: `Set: ${set.nombre}`,
         tarjetas: crearTarjetas({ tipo: 'set', preguntas }),
+        marcador: crearMarcador({ tipo: 'set', nombre: set.nombre }),
       };
     }
 
@@ -59,6 +67,11 @@ export function useTarjetasImpresion(fuente: FuenteImpresion): DatosImpresion | 
     if (tarjetas.length === 0) {
       return { estado: 'noDisponible', mensaje: 'Este juego no tiene rondas; elige otro.' };
     }
-    return { estado: 'listo', titulo: `Juego: ${juego.nombre}`, tarjetas };
+    return {
+      estado: 'listo',
+      titulo: `Juego: ${juego.nombre}`,
+      tarjetas,
+      marcador: crearMarcador({ tipo: 'juego', juego }),
+    };
   }, [repositorios, fuente.tipo, fuente.id]);
 }

@@ -124,9 +124,10 @@ export function agruparEnHojas<T>(tarjetas: readonly T[], porHoja: TarjetasPorHo
   return hojas;
 }
 
-/** "12 tarjetas en 6 hojas" / "1 tarjeta en 1 hoja" */
-export function resumenImpresion(tarjetas: number, hojas: number): string {
+/** "12 tarjetas en 6 hojas" / "1 tarjeta en 1 hoja", plus " + hoja de marcador" when included. */
+export function resumenImpresion(tarjetas: number, hojas: number, marcador = false): string {
   const textoTarjetas = tarjetas === 1 ? '1 tarjeta' : `${String(tarjetas)} tarjetas`;
   const textoHojas = hojas === 1 ? '1 hoja' : `${String(hojas)} hojas`;
-  return `${textoTarjetas} en ${textoHojas}`;
+  const textoMarcador = marcador ? ' + hoja de marcador' : '';
+  return `${textoTarjetas} en ${textoHojas}${textoMarcador}`;
 }

@@ -251,4 +251,9 @@ describe('resumenImpresion', () => {
     expect(resumenImpresion(12, 6)).toBe('12 tarjetas en 6 hojas');
     expect(resumenImpresion(1, 1)).toBe('1 tarjeta en 1 hoja');
   });
+
+  it('mentions the scoreboard sheet when it is included', () => {
+    expect(resumenImpresion(12, 6, true)).toBe('12 tarjetas en 6 hojas + hoja de marcador');
+    expect(resumenImpresion(12, 6, false)).toBe('12 tarjetas en 6 hojas');
+  });
 });

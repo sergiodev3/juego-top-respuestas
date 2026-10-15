@@ -1,11 +1,15 @@
 import { cx } from '@/shared/utils/cx';
 
-import { agruparEnHojas, type Tarjeta, type TarjetasPorHoja } from './dominio';
+import { CLASE_HOJA } from './clasesHoja';
+import { agruparEnHojas, type Marcador, type Tarjeta, type TarjetasPorHoja } from './dominio';
+import { HojaMarcador } from './HojaMarcador';
 import { TarjetaImpresion } from './TarjetaImpresion';
 
 interface HojasImpresionProps {
   tarjetas: readonly Tarjeta[];
   porHoja: TarjetasPorHoja;
+  /** Optional paper scoreboard, printed as one extra sheet after the cards. */
+  marcador?: Marcador | null;
 }
 
 const CORTE = 'border-dashed border-slate-500';
@@ -19,11 +23,10 @@ function claseCorte(indice: number, porHoja: TarjetasPorHoja): string {
 }
 
 /**
- * Portrait letter sheets as they print. On screen each sheet keeps the letter proportions with
- * padding standing in for the 10 mm page margin; in print the `@page` rule sets the margin and
- * each sheet fills one page (`break-after: page`) without splitting a card.
+ * Portrait letter sheets as they print (see `CLASE_HOJA`), then the optional scoreboard sheet.
+ * Every sheet is a child of the same container, so only the very last one skips the page break.
  */
-export function HojasImpresion({ tarjetas, porHoja }: HojasImpresionProps) {
+export function HojasImpresion({ tarjetas, porHoja, marcador = null }: HojasImpresionProps) {
   const hojas = agruparEnHojas(tarjetas, porHoja);
   return (
     <div className="flex flex-col items-center gap-8 print:block">
@@ -31,11 +34,7 @@ export function HojasImpresion({ tarjetas, porHoja }: HojasImpresionProps) {
         <section
           key={hoja[0]?.clave ?? indiceHoja}
           aria-label={`Hoja ${String(indiceHoja + 1)} de ${String(hojas.length)}`}
-          className={cx(
-            'grid aspect-[8.5/11] w-full max-w-[8.5in] grid-rows-2 bg-white p-[0.4in] text-slate-950 shadow-md ring-1 ring-slate-300',
-            porHoja === 4 && 'grid-cols-2',
-            'print:aspect-auto print:h-[257mm] print:max-w-none print:break-inside-avoid print:break-after-page print:p-0 print:text-black print:shadow-none print:ring-0 print:last:break-after-auto',
-          )}
+          className={cx(CLASE_HOJA, 'grid grid-rows-2', porHoja === 4 && 'grid-cols-2')}
         >
           {hoja.map((tarjeta, indice) => (
             <TarjetaImpresion
@@ -47,6 +46,7 @@ export function HojasImpresion({ tarjetas, porHoja }: HojasImpresionProps) {
           ))}
         </section>
       ))}
+      {marcador !== null && <HojaMarcador marcador={marcador} />}
     </div>
   );
 }

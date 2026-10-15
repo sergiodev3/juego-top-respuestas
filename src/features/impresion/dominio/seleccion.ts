@@ -6,6 +6,8 @@ export type FuenteImpresion = { tipo: 'set'; id: string } | { tipo: 'juego'; id:
 export interface SeleccionImpresion {
   fuente: FuenteImpresion | null;
   porHoja: TarjetasPorHoja;
+  /** Adds the paper scoreboard sheet after the cards (`?marcador=1`). */
+  marcador: boolean;
 }
 
 function idValido(valor: string | null): string | null {
@@ -15,7 +17,8 @@ function idValido(valor: string | null): string | null {
 
 /**
  * Reads the print selection from the query string: the source (a set wins over a game when
- * both are present) and the layout (`?por-hoja=4`; anything else means 2 cards per sheet).
+ * both are present), the layout (`?por-hoja=4`; anything else means 2 cards per sheet) and
+ * whether to add the paper scoreboard sheet (`?marcador=1`).
  */
 export function leerSeleccion(parametros: URLSearchParams): SeleccionImpresion {
   const setId = idValido(parametros.get('set'));
@@ -26,5 +29,9 @@ export function leerSeleccion(parametros: URLSearchParams): SeleccionImpresion {
       : juegoId !== null
         ? { tipo: 'juego', id: juegoId }
         : null;
-  return { fuente, porHoja: parametros.get('por-hoja') === '4' ? 4 : 2 };
+  return {
+    fuente,
+    porHoja: parametros.get('por-hoja') === '4' ? 4 : 2,
+    marcador: parametros.get('marcador') === '1',
+  };
 }

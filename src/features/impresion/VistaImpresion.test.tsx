@@ -157,4 +157,63 @@ describe('VistaImpresion', () => {
       await screen.findByText('No encontramos ese juego. Puede que se haya eliminado; elige otro.'),
     ).toBeInTheDocument();
   });
+
+  it('adds a scoreboard sheet for a game from the checkbox and keeps it in the URL', async () => {
+    const { ciencias } = await sembrar();
+    const [p1, p2] = await entorno.repositorios.preguntas.listarPorSet(ciencias.id);
+    const base = crearJuegoPorDefecto({ nombre: 'Repaso', preguntaIds: [] });
+    const juego = await entorno.repositorios.juegos.crear({
+      ...base,
+      rondas: [
+        { preguntaId: p1?.id ?? '', multiplicador: 1 },
+        { preguntaId: p2?.id ?? '', multiplicador: 2 },
+      ],
+    });
+    const { router, usuario } = renderizar(rutaImpresion({ juego: juego.id }));
+
+    const casilla = await screen.findByRole('checkbox', { name: 'Incluir hoja de marcador' });
+    expect(casilla).not.toBeChecked();
+    expect(screen.queryByRole('region', { name: 'Hoja de marcador' })).not.toBeInTheDocument();
+
+    await usuario.click(casilla);
+
+    const hoja = await screen.findByRole('region', { name: 'Hoja de marcador' });
+    expect(router.state.location.search).toBe(`?juego=${juego.id}&marcador=1`);
+    expect(screen.getByText('2 tarjetas en 1 hoja + hoja de marcador')).toBeInTheDocument();
+    const tabla = within(hoja).getByRole('table', { name: 'Marcador: Repaso' });
+    expect(
+      within(tabla)
+        .getAllByRole('columnheader')
+        .map((celda) => celda.textContent),
+    ).toEqual(['Equipo', 'R1', 'R2 x2', 'Total']);
+    expect(
+      within(tabla)
+        .getAllByRole('rowheader')
+        .map((celda) => celda.textContent),
+    ).toEqual(['Equipo A', 'Equipo B']);
+    expect(within(hoja).getByText(/^Fecha:/u)).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole('radio', { name: '4 por hoja' }));
+    expect(router.state.location.search).toBe(`?juego=${juego.id}&por-hoja=4&marcador=1`);
+
+    await usuario.click(screen.getByRole('checkbox', { name: 'Incluir hoja de marcador' }));
+    expect(router.state.location.search).toBe(`?juego=${juego.id}&por-hoja=4`);
+    expect(screen.queryByRole('region', { name: 'Hoja de marcador' })).not.toBeInTheDocument();
+  });
+
+  it('prints a blank scoreboard for a set with four teams and four rounds', async () => {
+    const { ciencias } = await sembrar();
+    renderizar(rutaImpresion({ set: ciencias.id, marcador: true }));
+
+    const hoja = await screen.findByRole('region', { name: 'Hoja de marcador' });
+    expect(screen.getByRole('checkbox', { name: 'Incluir hoja de marcador' })).toBeChecked();
+    const tabla = within(hoja).getByRole('table', { name: 'Marcador: Ciencias 2B' });
+    expect(
+      within(tabla)
+        .getAllByRole('columnheader')
+        .map((celda) => celda.textContent),
+    ).toEqual(['Equipo', 'R1', 'R2', 'R3', 'R4', 'Total']);
+    expect(within(tabla).getAllByRole('rowheader')).toHaveLength(4);
+    expect(within(tabla).getAllByRole('cell')).toHaveLength(20);
+  });
 });

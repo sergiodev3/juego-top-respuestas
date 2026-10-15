@@ -52,13 +52,15 @@ export interface OpcionesImpresion {
   set?: string;
   juego?: string;
   porHoja?: 2 | 4;
+  /** Adds the paper scoreboard sheet. */
+  marcador?: boolean;
 }
 
 /**
- * `/impresion?set=<id>&por-hoja=4`; without options, the source picker at `/impresion`.
- * The default layout (2 cards per sheet) is left out of the URL.
+ * `/impresion?set=<id>&por-hoja=4&marcador=1`; without options, the source picker at
+ * `/impresion`. Defaults (2 cards per sheet, no scoreboard sheet) are left out of the URL.
  */
-export function rutaImpresion({ set, juego, porHoja }: OpcionesImpresion = {}): string {
+export function rutaImpresion({ set, juego, porHoja, marcador }: OpcionesImpresion = {}): string {
   const parametros = new URLSearchParams();
   if (set !== undefined) {
     parametros.set('set', set);
@@ -68,6 +70,9 @@ export function rutaImpresion({ set, juego, porHoja }: OpcionesImpresion = {}): 
   }
   if (porHoja === 4) {
     parametros.set('por-hoja', String(porHoja));
+  }
+  if (marcador === true) {
+    parametros.set('marcador', '1');
   }
   const consulta = parametros.toString();
   return consulta === '' ? RUTAS.impresion : `${RUTAS.impresion}?${consulta}`;

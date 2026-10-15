@@ -4,12 +4,13 @@ import { Link, useParams } from 'react-router';
 
 import { useRepositorios } from '@/db/contextoRepositorios';
 import type { Pregunta } from '@/shared/modelo';
-import { RUTAS, rutaEditarPregunta, rutaPreguntaNueva } from '@/shared/rutas';
+import { RUTAS, rutaEditarPregunta, rutaImpresion, rutaPreguntaNueva } from '@/shared/rutas';
 import { AvisoError } from '@/shared/ui/AvisoError';
 import {
   CLASE_BOTON_ACCION,
   CLASE_BOTON_ACCION_PELIGRO,
   CLASE_BOTON_PRIMARIO,
+  CLASE_BOTON_SECUNDARIO,
   CLASE_CAMPO,
   CLASE_ETIQUETA,
 } from '@/shared/ui/clases';
@@ -114,9 +115,20 @@ export function VistaSetBanco() {
             <p className="text-sm text-slate-600">{textoCantidadPreguntas(total)}</p>
           )}
         </div>
-        <Link to={rutaPreguntaNueva(set.id)} className={CLASE_BOTON_PRIMARIO}>
-          Nueva pregunta
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          {total === 0 ? (
+            <p className="text-sm text-slate-600">Agrega preguntas para poder imprimir tarjetas.</p>
+          ) : (
+            total !== undefined && (
+              <Link to={rutaImpresion({ set: set.id })} className={CLASE_BOTON_SECUNDARIO}>
+                Imprimir tarjetas
+              </Link>
+            )
+          )}
+          <Link to={rutaPreguntaNueva(set.id)} className={CLASE_BOTON_PRIMARIO}>
+            Nueva pregunta
+          </Link>
+        </div>
       </header>
 
       {error && <AvisoError>{error}</AvisoError>}
