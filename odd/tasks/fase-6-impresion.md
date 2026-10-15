@@ -28,7 +28,7 @@ SPEC section 7: the host needs printed cards with every answer, points and synon
 
 - [x] T6.1 Print domain + cards view: pure `crearTarjetas` (from a set or a game + questions; numbering, ordering, multiplied points for games, missing-question notices) and `agruparEnHojas(tarjetas, porHoja)`; `/impresion` view with source picker, layout 2/4, on-screen preview, "Imprimir" button, print CSS (letter, cut lines, hidden shell) (route: delegated writer — domain + view + CSS; test-first)
 - [x] T6.2 Entry points + paper scoreboard: "Imprimir tarjetas" links from the set view in the bank and from saved games (list and editor); optional scoreboard sheet (route: delegated writer; test-first)
-- [ ] T6.3 Verify (typecheck, lint, format:check, test, build), CLAUDE.md Fase 6 section, work-unit commits, RDD per commit range
+- [x] T6.3 Verify (typecheck, lint, format:check, test, build), CLAUDE.md Fase 6 section, work-unit commits, RDD per commit range
 
 ## Acceptance criteria
 
@@ -55,6 +55,9 @@ Runner: Vitest. Pure domain (cards from set/game, sheet grouping, scoreboard row
   - Accepted defaults: the scoreboard choice is per source (not carried through "Cambiar selección"); the game link shows even for a game without rounds (the view explains it); a set scoreboard has no "Ronda final" column.
   - Needs a real print preview: scoreboard fits one page; headers with ~10+ rounds; color swatch printing.
 
+- T6.2 commit `054d7dd`.
+- T6.3 (parent inline — one doc file, already understood): CLAUDE.md "Printable host cards (Fase 6)" section. Checks: full suite 66 files / 660 passed (T6.2 spot check), lint 0, typecheck and format clean, build OK with no chunk-size warning (39 precached).
+
 ## Next step
 
-Commit T6.2, then T6.3 (CLAUDE.md, verify, RDD).
+RDD for `80002c1..HEAD`, then the user's manual test in a real print preview (Chrome/Edge: 2 and 4 per sheet, long answers, scoreboard, no trailing blank page) and approval before Fase 7.
