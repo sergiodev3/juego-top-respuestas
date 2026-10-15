@@ -47,3 +47,28 @@ export function rutaPanel(partidaId: string): string {
 export function rutaEditarPregunta(setId: string, preguntaId: string): string {
   return generatePath(RUTAS.bancoPregunta, { setId, preguntaId });
 }
+
+export interface OpcionesImpresion {
+  set?: string;
+  juego?: string;
+  porHoja?: 2 | 4;
+}
+
+/**
+ * `/impresion?set=<id>&por-hoja=4`; without options, the source picker at `/impresion`.
+ * The default layout (2 cards per sheet) is left out of the URL.
+ */
+export function rutaImpresion({ set, juego, porHoja }: OpcionesImpresion = {}): string {
+  const parametros = new URLSearchParams();
+  if (set !== undefined) {
+    parametros.set('set', set);
+  }
+  if (juego !== undefined) {
+    parametros.set('juego', juego);
+  }
+  if (porHoja === 4) {
+    parametros.set('por-hoja', String(porHoja));
+  }
+  const consulta = parametros.toString();
+  return consulta === '' ? RUTAS.impresion : `${RUTAS.impresion}?${consulta}`;
+}

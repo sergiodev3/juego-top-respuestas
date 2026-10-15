@@ -18,11 +18,14 @@ const claseEnlace = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-amber-400 text-slate-900' : 'text-slate-100 hover:bg-slate-700',
   );
 
-/** App shell (header + navigation) for every view except the projector board. */
+/**
+ * App shell (header + navigation) for every view except the projector board. The header is
+ * hidden in print, so printable views (host cards) print only their own content.
+ */
 export function Layout() {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="bg-slate-900 text-white">
+    <div className="flex min-h-dvh flex-col print:block print:min-h-0">
+      <header className="bg-slate-900 text-white print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
           <Link to={RUTAS.inicio} className="text-xl font-bold text-amber-300">
             Top Respuestas
@@ -45,7 +48,7 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className="flex-1 px-4 py-8">
+      <main className="flex-1 px-4 py-8 print:p-0">
         <Outlet />
       </main>
     </div>
