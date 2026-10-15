@@ -6,6 +6,7 @@ export { esquemaConfigPartida, esquemaEvento } from './esquemas';
 export { aplicar, deshacer, reducir, validar } from './motor';
 export { reconstruir } from './reconstruccion';
 export type {
+  PuntosVisibles,
   VistaEquipo,
   VistaJugadorRondaFinal,
   VistaRespuesta,
@@ -13,4 +14,4 @@ export type {
   VistaRondaFinal,
   VistaTablero,
 } from './proyeccion';
-export { proyectarTablero } from './proyeccion';
+export { proyectarTablero, puntosVisibles } from './proyeccion';

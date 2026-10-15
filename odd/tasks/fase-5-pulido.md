@@ -32,6 +32,8 @@ Fase 4 is fully playable but mouse-only, silent and static. The SPEC (sections 5
 - [x] T5.5 Fase 4 follow-ups: engine `motivo` strings in "usted"; export `PREGUNTAS_RONDA_FINAL` from `@/engine` and remove the duplicate in `shared/modelo`; Inicio "Continuar partida" shows a neutral loading state instead of the disabled card (route: delegated writer or inline depending on size; tests updated)
 - [x] T5.7 Face-off miss X (added by user decision after T5.3): expose face-off misses in the projection (`proyectarTablero`) and the sync schema (`esquemaVistaTablero`, both-ways type test), and show one big red X on the board for each face-off miss without touching the 3-strike count (route: delegated writer — engine + sync + board; test-first, engine coverage gate)
 - [x] T5.8 "Tú" everywhere (user decision after T5.5): rewrite every "usted" UI string to "tú" — conductor panel, shortcuts and help sheet, board, dialogs, and the engine `motivo` strings; keep `codigo` values; update tests (route: delegated writer — many files; tests updated)
+- [x] T5.9 Show multiplied points (user feedback after the manual test, 2026-10-14): in x2/x3 rounds the board and the panel show each answer's points and "Puntos en juego" already multiplied (30 → 60), like on TV, so what is shown is what the team wins; the engine scoring rule is unchanged (`puntosOtorgados = bolsa × multiplicador`) (route: delegated writer — engine projection + board + panel; test-first)
+- [ ] T5.10 Faster final round (user decision, 2026-10-14): typing the player's answer becomes optional (engine accepts empty text; a picked match stores the survey answer's text; an empty no-match is allowed), and final-round shortcuts: `1`–`8` pick the match for the current question, `0` = no match, `Enter` records it and moves to the next question, `Espacio` keeps the timer; digits typed inside the text input stay text, `Enter` there records too (route: delegated writer after T5.9 — engine + panel; test-first)
 - [x] T5.6 Verify (typecheck, lint, format:check, test, build), work-unit commits per task, RDD per commit range, update CLAUDE.md (Fase 5 section)
 
 ## Acceptance criteria
@@ -98,6 +100,11 @@ Runner: Vitest. Pure pieces (event→sound mapping, mute store, shortcut→actio
 
 - T5.6 commit `74be2a9`; RDD medium (range `0041805..74be2a9` incl. T5.5, T5.8 and the README fix, 38 files / 635 lines); user granted; review-reliability approved with no advisories; acknowledged (lineage review-e3d458dcd2d7b3b6). Last reviewed commit: `74be2a9`.
 
+- User manual test on localhost (2026-10-14): "va bien". Feedback: (1) didn't see doubled points in an x2 round — answers and the pot show base points and only the award is multiplied → user chose "show multiplied values" → T5.9; (2) the final round is hard to run fast for the host → to discuss after T5.9.
+
+- User decision (2026-10-14) on the final-round feedback: optional text + final-round keyboard → T5.10.
+- T5.9 (delegated writer): engine helper `puntosVisibles(config, ronda)` (all answers + `bolsa`, × the round multiplier; `multiplicadorDe` now exported from `reglas/comun.ts`); `proyectarRonda` projects revealed `puntos` and `bolsa` multiplied (projected `bolsa` = `puntosOtorgados` once awarded; answers revealed after the round also multiplied); panel `PreguntaActual` + `MarcadorPanel` use the helper; board unchanged (renders the projection); scoring unchanged (state keeps base `bolsa`). RED → GREEN: engine x2/x3 failed (bolsa 48, base puntos) → green, x1 guard passed early; 2 old x2 assertions encoded base values → updated; helper missing → green; panel "Puntos en juego: 60" missing → green; board x2 test written after the engine change (no RED seen). Writer: typecheck, lint, format clean; coverage engine lines 98 / branches 93.49 / functions 100; test 62 files / 614. Parent spot check: engine + panel + board 19 files / 328 passed, lint 0; CLAUDE.md scoring line now says displayed points are multiplied. ~240 authored lines.
+
 ## Next step
 
-User manual test (projector sizes, sounds, shortcuts, animations) and approval before Fase 6. Push / PR / merge are the user's decision.
+Commit T5.9, then T5.10 (delegated writer).

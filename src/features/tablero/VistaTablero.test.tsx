@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { proyectarTablero, reducir, type Evento, type VistaTablero } from '@/engine';
 import { CanalSyncProvider, crearCanal, type Canal, type MensajeSync } from '@/shared/sync';
-import { configPrueba } from '@/test/fabricasPartida';
+import { configPrueba, preguntaSnapshotPrueba } from '@/test/fabricasPartida';
 import { crearBusMemoria } from '@/test/transporteMemoria';
 
 import { VistaTablero as VistaTableroRuta } from './VistaTablero';
@@ -125,6 +125,37 @@ describe('VistaTablero', () => {
     expect(within(marcador).getByText('Equipo A')).toBeInTheDocument();
     expect(within(marcador).getByText('Equipo B')).toBeInTheDocument();
     expect(within(marcador).getByText('En turno')).toBeInTheDocument();
+  });
+
+  it('shows answer points and the pot already multiplied in an x2 round', () => {
+    renderizar();
+    const doble = configPrueba({
+      rondas: [{ pregunta: preguntaSnapshotPrueba('R1', [30, 20, 10]), multiplicador: 2 }],
+    });
+    const vista = proyectarTablero(
+      doble,
+      reducir(doble, [
+        { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+        { tipo: 'REVELAR', indice: 0 },
+        { tipo: 'JUGAR' },
+        { tipo: 'REVELAR', indice: 2 },
+      ]),
+    );
+
+    act(() => {
+      panel.publicar(estado(vista));
+    });
+
+    expect(screen.getByText('Puntos x2')).toBeInTheDocument();
+    const casillas = within(screen.getByRole('list', { name: 'Respuestas' })).getAllByRole(
+      'listitem',
+    );
+    expect(casillas.map((casilla) => casilla.textContent)).toEqual([
+      '1TXT_R1_060',
+      '2',
+      '3TXT_R1_220',
+    ]);
+    expect(screen.getByText('Puntos en juego: 80')).toBeInTheDocument();
   });
 
   it('never shows hidden answers, synonyms or data outside the projection', () => {

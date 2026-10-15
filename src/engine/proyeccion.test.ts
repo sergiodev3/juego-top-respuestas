@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { aplicar, crearEstadoInicial, deshacer, proyectarTablero, reducir } from './index';
+import {
+  aplicar,
+  crearEstadoInicial,
+  deshacer,
+  proyectarTablero,
+  puntosVisibles,
+  reducir,
+} from './index';
 import type { ConfigPartida, EstadoJuego, Evento } from './index';
-import { caraACaraGanado, crearConfig, jugar, tachas } from './prueba/fabricas';
+import { caraACaraGanado, crearConfig, definido, jugar, tachas } from './prueba/fabricas';
 import {
   generarPartida,
   partidaDosEquipos,
@@ -91,12 +98,13 @@ describe('proyectarTablero: regular rounds', () => {
       numero: 1,
       revelada: true,
       texto: 'TXT_R1_0',
-      puntos: 40,
+      // Round 1 is x2: display points are already multiplied.
+      puntos: 80,
     });
     expect(vista.ronda?.respuestas[1]).toEqual({ numero: 2, revelada: false });
     expect(vista.ronda).toMatchObject({
       tachas: 3,
-      bolsa: 40,
+      bolsa: 80,
       equipoControl: 0,
       equipoRobo: 1,
       ganadorCaraACara: 0,
@@ -119,7 +127,7 @@ describe('proyectarTablero: regular rounds', () => {
       numero: 3,
       revelada: true,
       texto: 'TXT_R1_2',
-      puntos: 15,
+      puntos: 30,
     });
   });
 
@@ -130,6 +138,74 @@ describe('proyectarTablero: regular rounds', () => {
     expect(serializado).not.toContain('SIN_');
     expect(serializado).not.toContain('R2');
     expect(serializado).not.toContain('advertencias');
+  });
+});
+
+describe('proyectarTablero: points on display are already multiplied', () => {
+  // Answers worth 40/25/15/12/8 in rounds x2, x1 and x3.
+  const config = crearConfig({ multiplicadores: [2, 1, 3] });
+  const rondaUno: Evento[] = [
+    ...caraACaraGanado(0),
+    { tipo: 'JUGAR' },
+    { tipo: 'REVELAR', indice: 1 },
+  ];
+
+  it('shows doubled answer points and a doubled pot in an x2 round', () => {
+    const vista = proyectarTablero(config, jugar(config, rondaUno));
+    expect(vista.ronda?.respuestas.slice(0, 3)).toEqual([
+      { numero: 1, revelada: true, texto: 'TXT_R1_0', puntos: 80 },
+      { numero: 2, revelada: true, texto: 'TXT_R1_1', puntos: 50 },
+      { numero: 3, revelada: false },
+    ]);
+    expect(vista.ronda?.bolsa).toBe(130);
+  });
+
+  it('keeps the base points in an x1 round', () => {
+    const ganarRondaUno: Evento[] = [
+      ...rondaUno,
+      ...[2, 3, 4].map((indice): Evento => ({ tipo: 'REVELAR', indice })),
+    ];
+    const vista = proyectarTablero(
+      config,
+      jugar(config, [
+        ...ganarRondaUno,
+        { tipo: 'SIGUIENTE_RONDA' },
+        { tipo: 'ASIGNAR_TURNO', equipo: 1 },
+        { tipo: 'REVELAR', indice: 0 },
+      ]),
+    );
+    expect(vista.ronda).toMatchObject({ numero: 2, multiplicador: 1, bolsa: 40 });
+    expect(vista.ronda?.respuestas[0]).toMatchObject({ puntos: 40 });
+  });
+
+  it('awards exactly the pot on display, which is the base pot times the multiplier (steal in x3)', () => {
+    const triple = crearConfig({ multiplicadores: [3] });
+    const estado = jugar(triple, [
+      ...caraACaraGanado(0),
+      { tipo: 'JUGAR' },
+      ...tachas(3),
+      { tipo: 'ROBO_EXITOSO', indice: 4 },
+      { tipo: 'REVELAR_TODAS' },
+    ]);
+    const vista = proyectarTablero(triple, estado);
+    // Base pot 40 + 8 = 48; x3 = 144, the same score the rules awarded before this change.
+    expect(estado.ronda?.bolsa).toBe(48);
+    expect(vista.equipos.map(({ puntaje }) => puntaje)).toEqual([0, 144]);
+    expect(vista.ronda).toMatchObject({ bolsa: 144, puntosOtorgados: 144 });
+    expect(vista.ronda?.respuestas[4]).toMatchObject({ texto: 'TXT_R1_4', puntos: 24 });
+    // Answers shown after the round (no points awarded) still show their display value.
+    expect(vista.ronda?.respuestas[2]).toMatchObject({ texto: 'TXT_R1_2', puntos: 45 });
+  });
+});
+
+describe('puntosVisibles', () => {
+  it('gives the panel every answer (hidden ones too) and the pot, multiplied like the board', () => {
+    const config = crearConfig({ multiplicadores: [3] });
+    const estado = jugar(config, caraACaraGanado(1));
+    expect(puntosVisibles(config, definido(estado.ronda))).toEqual({
+      respuestas: [120, 75, 45, 36, 24],
+      bolsa: 120,
+    });
   });
 });
 

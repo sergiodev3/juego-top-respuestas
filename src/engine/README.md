@@ -6,21 +6,24 @@ No React, React DOM, Dexie, or imports from `@/features`, `@/app`, or `@/db` (en
 
 ## Public API (`@/engine`)
 
-| Export                             | Purpose                                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| `crearEstadoInicial(config)`       | Round 1 face-off, scores at 0. Throws if `validarConfig` finds problems.                    |
-| `validarConfig(config): string[]`  | Spanish messages for a malformed snapshot (2-4 teams, >= 1 round, 5 final questions, ...).  |
-| `validar(config, estado, evento)`  | `{ ok: true }` or `{ ok: false, codigo, motivo }`; the panel uses it to enable actions.     |
-| `aplicar(config, estado, evento)`  | Next state for a valid event; throws `EventoRechazadoError` (with `codigo`) otherwise.      |
-| `reducir(config, eventos)`         | Replays a typed log. Expects a valid config (throws otherwise, like `crearEstadoInicial`).  |
-| `reconstruir(config, eventos)`     | Persistence-boundary rebuild from `unknown` data; never throws (see "Undo and replay").     |
-| `esquemaConfigPartida`             | Zod schema for the shape of a stored config snapshot (rules stay in `validarConfig`).       |
-| `esquemaEvento`                    | Zod discriminated union for the shape of every stored event, tied to the `Evento` type.     |
-| `deshacer(eventos)`                | The log without its last event (undo).                                                      |
-| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers. |
-| Types                              | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ...  |
+| Export                             | Purpose                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `crearEstadoInicial(config)`       | Round 1 face-off, scores at 0. Throws if `validarConfig` finds problems.                     |
+| `validarConfig(config): string[]`  | Spanish messages for a malformed snapshot (2-4 teams, >= 1 round, 5 final questions, ...).   |
+| `validar(config, estado, evento)`  | `{ ok: true }` or `{ ok: false, codigo, motivo }`; the panel uses it to enable actions.      |
+| `aplicar(config, estado, evento)`  | Next state for a valid event; throws `EventoRechazadoError` (with `codigo`) otherwise.       |
+| `reducir(config, eventos)`         | Replays a typed log. Expects a valid config (throws otherwise, like `crearEstadoInicial`).   |
+| `reconstruir(config, eventos)`     | Persistence-boundary rebuild from `unknown` data; never throws (see "Undo and replay").      |
+| `esquemaConfigPartida`             | Zod schema for the shape of a stored config snapshot (rules stay in `validarConfig`).        |
+| `esquemaEvento`                    | Zod discriminated union for the shape of every stored event, tied to the `Evento` type.      |
+| `deshacer(eventos)`                | The log without its last event (undo).                                                       |
+| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers.  |
+| `puntosVisibles(config, ronda)`    | Display points of a round (every answer and the pot), already multiplied; used by the panel. |
+| Types                              | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ...   |
 
 Teams are addressed by index (0-3, keys A-D). `ConfigPartida` is a snapshot (teams, rounds with their questions and multipliers, strike limit, optional final round), so replay never depends on the question bank. Answers in a `PreguntaSnapshot` are sorted by points, desc.
+
+Points on display are already multiplied, like on TV: in an x2 round an answer worth 30 shows 60, and the round view's `bolsa` sums the multiplied values, so it is exactly what the round winner gets (`puntosOtorgados`). The engine state keeps base points (`estado.ronda.bolsa`) and the rules apply the multiplier once, when the round is awarded; `proyectarTablero` and `puntosVisibles` are the only places that multiply for display. The final round has no multiplier.
 
 The board's round view carries `fallosCaraACara`, the number of face-off misses this round (separate from `tachas`). It is only a count, stays after the face-off ends (so undoing back into it never raises it) and restarts at 0 each round; the board shows one big X each time it goes up.
 

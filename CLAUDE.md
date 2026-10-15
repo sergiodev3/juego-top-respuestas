@@ -53,7 +53,7 @@ Import with the `@/` alias (`@/shared/rutas`). Layer direction: `app` -> `featur
 - **IDs and timestamps**: IDs from `crypto.randomUUID()`; every record has `actualizadoEn`. Persistence sits behind repository interfaces for future sync with Express + PostgreSQL.
 - **Board sync**: the panel is the single source of truth. The board receives only a projection (`proyectarTablero`) over BroadcastChannel, with Zod-validated messages.
 - **3-4 teams**: all teams play every round; the host assigns with keys A-D whoever buzzed first in cara a cara and in robo.
-- **Scoring**: cara a cara strikes do not count toward the 3; a successful robo banks the stolen answer too; the round multiplier is applied when points are awarded.
+- **Scoring**: cara a cara strikes do not count toward the 3; a successful robo banks the stolen answer too; the round multiplier is applied when points are awarded (state keeps the base `bolsa`), but the board and the panel show round points already multiplied (`proyectarTablero` and `puntosVisibles(config, ronda)`), so what is shown is what the team wins.
 - **Final round**: adds the `RF_RESPUESTA` event; the timer lives in the UI, not the engine. `RF_TERMINAR` adds the final-round total to the playing team's score; `TERMINAR_JUEGO` during the final round adds nothing.
 - **Import synonyms** (`R1: auto, coche; R3: celular`) are mapped to their answers before answers are sorted by points.
 - **Projector fullscreen** needs one click inside the board window (browser restriction). Window Management API (`getScreenDetails`) only on Chromium; fallback is `window.open` plus instructions.
