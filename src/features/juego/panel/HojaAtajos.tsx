@@ -107,8 +107,8 @@ export function HojaAtajos({ abierta, onCerrar }: HojaAtajosProps) {
           </p>
         </Seccion>
         <p className="border-t border-slate-200 pt-3">
-          Los atajos no funcionan mientras escribe en un campo ni con un diálogo abierto. La barra
-          espaciadora no activa el botón enfocado; para eso use <kbd>Enter</kbd>.
+          Los atajos no funcionan mientras escribes en un campo ni con un diálogo abierto. La barra
+          espaciadora no activa el botón enfocado; para eso usa <kbd>Enter</kbd>.
         </p>
       </div>
     </DialogoInformacion>

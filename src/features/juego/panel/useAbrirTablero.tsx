@@ -33,22 +33,22 @@ export function useAbrirTablero(entorno?: EntornoVentanas) {
     <>
       {aviso === 'bloqueado' && (
         <AvisoError>
-          El navegador bloqueó la ventana del tablero. Permita las ventanas emergentes para este
-          sitio (icono en la barra de direcciones) y presione de nuevo «Abrir tablero en el
+          El navegador bloqueó la ventana del tablero. Permite las ventanas emergentes para este
+          sitio (icono en la barra de direcciones) y presiona de nuevo «Abrir tablero en el
           proyector».
         </AvisoError>
       )}
       <DialogoInformacion
         abierto={aviso === 'instrucciones'}
-        titulo="Coloque el tablero en el proyector"
+        titulo="Coloca el tablero en el proyector"
         onCerrar={() => {
           setAviso(null);
         }}
       >
         <ol className="list-decimal space-y-1 pl-6">
-          <li>Arrastre la ventana del tablero a la pantalla del proyector.</li>
-          <li>Dentro del tablero, haga clic en «Pantalla completa».</li>
-          <li>Regrese a esta ventana para conducir el juego.</li>
+          <li>Arrastra la ventana del tablero a la pantalla del proyector.</li>
+          <li>Dentro del tablero, haz clic en «Pantalla completa».</li>
+          <li>Regresa a esta ventana para conducir el juego.</li>
         </ol>
       </DialogoInformacion>
     </>

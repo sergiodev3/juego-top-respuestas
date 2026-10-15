@@ -38,7 +38,7 @@ export function VistaJuegoRapido({ aleatorio = Math.random }: VistaJuegoRapidoPr
     setErrores([]);
     const set = sets?.find((s) => s.id === setId);
     if (set === undefined) {
-      setErrores(['Elija un set para jugar.']);
+      setErrores(['Elige un set para jugar.']);
       return;
     }
     setOcupado(true);
@@ -59,7 +59,7 @@ export function VistaJuegoRapido({ aleatorio = Math.random }: VistaJuegoRapidoPr
       }
       await inicio.iniciar({ juegoId: juego.id, config: resultado.config });
     } catch {
-      setErrores(['No se pudo iniciar la partida. Intente de nuevo.']);
+      setErrores(['No se pudo iniciar la partida. Intenta de nuevo.']);
     } finally {
       setOcupado(false);
     }
@@ -72,7 +72,7 @@ export function VistaJuegoRapido({ aleatorio = Math.random }: VistaJuegoRapidoPr
           Nuevo juego rápido
         </h1>
         <p className="text-slate-700">
-          Elija un set y presione «Jugar»: 2 equipos, hasta 4 rondas con preguntas al azar del set y
+          Elige un set y presiona «Jugar»: 2 equipos, hasta 4 rondas con preguntas al azar del set y
           sin ronda final.
         </p>
       </header>
@@ -84,7 +84,7 @@ export function VistaJuegoRapido({ aleatorio = Math.random }: VistaJuegoRapidoPr
             <p className="text-slate-700">Cargando sets…</p>
           ) : sets.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-400 bg-white p-4 text-slate-700">
-              Todavía no hay sets. Cree uno en el banco de preguntas o importe un archivo.
+              Todavía no hay sets. Crea uno en el banco de preguntas o importa un archivo.
             </p>
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">

@@ -106,7 +106,7 @@ describe('VistaPanel: final round', () => {
 
     await registrar(usuario, 2, 1, 'perro', '1. TXT_F1_0 (40 pts)');
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Respuesta repetida: pida otra respuesta.',
+      'Respuesta repetida: pide otra respuesta.',
     );
     const boton = screen.getByRole('button', { name: 'Registrar la respuesta de la pregunta 1' });
     expect(boton).toHaveAttribute('aria-disabled', 'true');

@@ -31,6 +31,7 @@ Fase 4 is fully playable but mouse-only, silent and static. The SPEC (sections 5
 - [x] T5.4 Projector polish: very large type and high contrast tuned for a projector (clamp-based sizes), waiting screen with the game name (keep last known name after `SIN_PARTIDA`), round title card (game name, "Ronda N", multiplier) at round start, hide the cursor after 3 s of inactivity on the board (route: delegated writer; test-first for the cursor timer and waiting screen)
 - [x] T5.5 Fase 4 follow-ups: engine `motivo` strings in "usted"; export `PREGUNTAS_RONDA_FINAL` from `@/engine` and remove the duplicate in `shared/modelo`; Inicio "Continuar partida" shows a neutral loading state instead of the disabled card (route: delegated writer or inline depending on size; tests updated)
 - [x] T5.7 Face-off miss X (added by user decision after T5.3): expose face-off misses in the projection (`proyectarTablero`) and the sync schema (`esquemaVistaTablero`, both-ways type test), and show one big red X on the board for each face-off miss without touching the 3-strike count (route: delegated writer — engine + sync + board; test-first, engine coverage gate)
+- [x] T5.8 "Tú" everywhere (user decision after T5.5): rewrite every "usted" UI string to "tú" — conductor panel, shortcuts and help sheet, board, dialogs, and the engine `motivo` strings; keep `codigo` values; update tests (route: delegated writer — many files; tests updated)
 - [ ] T5.6 Verify (typecheck, lint, format:check, test, build), work-unit commits per task, RDD per commit range, update CLAUDE.md (Fase 5 section)
 
 ## Acceptance criteria
@@ -83,6 +84,11 @@ Runner: Vitest. Pure pieces (event→sound mapping, mute store, shortcut→actio
   - New flake under full-suite load: `src/app/rutaTablero.test.tsx` → T5.6.
   - Found: most of the app outside the panel still uses "tú" (Inicio, banco, importar, respaldos, Zod messages in `shared/modelo`) → product question to the user (one form for the whole app).
 
+- T5.5 commit `4414402`; RDD assess medium, 279 lines, `under_budget` → pending in the slice with `7827315`; last reviewed boundary remains `0041805`.
+- User decision (2026-10-14): the whole app uses "tú" (es-MX, friendly) → new task T5.8.
+
+- T5.8 (delegated writer): 51 distinct phrases moved to "tú" across the engine `motivo` map (`rechazos.ts` + 1 in `reglas/caraACara.ts`, `codigo` unchanged), `dominio/panel.ts` guidance/confirmations, panel pieces, help sheet, second-screen instructions (`useAbrirTablero.tsx`), setup form and quick game; 9 test files' assertions updated (29 lines). "Pregunte si juega o pasa." → "Pregúntale si juega o pasa." (avoids reading "Pregunta" as the noun). Third-person sentences about teams/players keep "su"/"puede". Test-first exception: copy-only change, no new behavior. Writer: typecheck, lint, format clean; coverage gate met; test 602/603 (`PanelImportacion` load flake; 11/11 alone); final grep finds no usted copy left. Parent spot check: engine + juego 26 files / 376 passed, lint 0. ~180 authored lines.
+
 ## Next step
 
-Commit T5.5; ask the user tú vs usted for the whole app; then T5.6.
+Commit T5.8, RDD (range from `0041805`), then T5.6.

@@ -41,7 +41,7 @@ export function SeccionRondas({ datos, preguntasPorId, onCambiar }: SeccionProps
       </h3>
       {rondas.length === 0 ? (
         <p className="rounded-lg border border-dashed border-slate-400 bg-white p-4 text-slate-700">
-          Todavía no hay rondas. Agregue preguntas desde «Selección de preguntas».
+          Todavía no hay rondas. Agrega preguntas desde «Selección de preguntas».
         </p>
       ) : (
         <ol aria-label="Rondas" className="space-y-2">
@@ -154,7 +154,7 @@ export function SeccionRondaFinal({ datos, preguntasPorId, onCambiar }: SeccionP
       {rondaFinal.activa && (
         <div className="space-y-3">
           <p className="text-sm text-slate-700">
-            {rondaFinal.preguntaIds.length} de {PREGUNTAS_RONDA_FINAL} preguntas. Agréguelas desde
+            {rondaFinal.preguntaIds.length} de {PREGUNTAS_RONDA_FINAL} preguntas. Agrégalas desde
             «Selección de preguntas».
           </p>
           {rondaFinal.preguntaIds.length > 0 && (

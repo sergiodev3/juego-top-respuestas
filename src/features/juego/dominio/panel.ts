@@ -68,22 +68,22 @@ export function guiaPanel(config: ConfigPartida, estado: EstadoJuego): string {
   switch (estado.fase) {
     case 'caraACara':
       if (caraACara.ganador !== null) {
-        return `${nombreEquipo(config, caraACara.ganador)} gana el cara a cara. Pregunte si juega o pasa.`;
+        return `${nombreEquipo(config, caraACara.ganador)} gana el cara a cara. Pregúntale si juega o pasa.`;
       }
       if (caraACara.respondedor !== null) {
-        return `Responde ${nombreEquipo(config, caraACara.respondedor)}. Revele su respuesta o marque tache si no está en el tablero.`;
+        return `Responde ${nombreEquipo(config, caraACara.respondedor)}. Revela su respuesta o marca tache si no está en el tablero.`;
       }
       return caraACara.intentos.length === 0
-        ? 'Cara a cara: asigne el turno al equipo que presionó primero el botón.'
-        : 'Asigne el turno al siguiente equipo que presionó el botón.';
+        ? 'Cara a cara: asigna el turno al equipo que presionó primero el botón.'
+        : 'Asigna el turno al siguiente equipo que presionó el botón.';
     case 'enJuego':
-      return `${nombreEquipo(config, ronda.equipoControl)} tiene el control. Revele cada acierto o marque tache.`;
+      return `${nombreEquipo(config, ronda.equipoControl)} tiene el control. Revela cada acierto o marca tache.`;
     case 'robo':
       return ronda.equipoRobo === null
-        ? 'Robo: asigne el turno al equipo que intentará robar.'
-        : `${nombreEquipo(config, ronda.equipoRobo)} intenta robar. Si acierta, revele esa respuesta; si no, marque «Robo fallido».`;
+        ? 'Robo: asigna el turno al equipo que intentará robar.'
+        : `${nombreEquipo(config, ronda.equipoRobo)} intenta robar. Si acierta, revela esa respuesta; si no, marca «Robo fallido».`;
     default:
-      return `${nombreEquipo(config, ronda.ganador)} gana ${String(ronda.puntosOtorgados ?? 0)} puntos. Puede revelar las respuestas restantes y pasar a la siguiente ronda.`;
+      return `${nombreEquipo(config, ronda.ganador)} gana ${String(ronda.puntosOtorgados ?? 0)} puntos. Puedes revelar las respuestas restantes y pasar a la siguiente ronda.`;
   }
 }
 
@@ -133,7 +133,7 @@ export function confirmacionPara(
       return {
         titulo: '¿Terminar la partida?',
         descripcion:
-          'Se mostrará el resultado final. Después ya no podrá continuar ni deshacer acciones.',
+          'Se mostrará el resultado final. Después ya no podrás continuar ni deshacer acciones.',
         textoConfirmar: 'Terminar partida',
       };
     case 'RF_TERMINAR': {
@@ -150,7 +150,7 @@ export function confirmacionPara(
       if (textoConfirmar === 'Terminar juego') {
         return {
           titulo: '¿Terminar el juego?',
-          descripcion: `${ocultas ? 'Hay respuestas sin revelar. ' : ''}Era la última ronda: se mostrará el resultado final y ya no podrá deshacer acciones.`,
+          descripcion: `${ocultas ? 'Hay respuestas sin revelar. ' : ''}Era la última ronda: se mostrará el resultado final y ya no podrás deshacer acciones.`,
           textoConfirmar,
         };
       }
@@ -158,7 +158,7 @@ export function confirmacionPara(
         ? {
             titulo: 'Hay respuestas sin revelar. ¿Pasar a la siguiente ronda?',
             descripcion:
-              'Las respuestas ocultas no se mostrarán. Puede usar «Revelar todas» antes de continuar.',
+              'Las respuestas ocultas no se mostrarán. Puedes usar «Revelar todas» antes de continuar.',
             textoConfirmar,
           }
         : null;

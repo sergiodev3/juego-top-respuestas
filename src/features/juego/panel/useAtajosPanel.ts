@@ -6,8 +6,8 @@ import { comandoDeTecla, type ComandoAtajo } from '../dominio';
 import type { AccionesPanel, AccionPanel } from './useAccionesPanel';
 import type { ControlTemporizador } from './useTemporizador';
 
-const MOTIVO_SIN_TIEMPO = 'El tiempo terminó. Use «Reiniciar tiempo» para empezar de nuevo.';
-const MOTIVO_GUARDANDO = 'Espere un momento: se está guardando la jugada anterior.';
+const MOTIVO_SIN_TIEMPO = 'El tiempo terminó. Usa «Reiniciar tiempo» para empezar de nuevo.';
+const MOTIVO_GUARDANDO = 'Espera un momento: se está guardando la jugada anterior.';
 const CAMPOS_DE_TEXTO = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
 
 export interface OpcionesAtajos {

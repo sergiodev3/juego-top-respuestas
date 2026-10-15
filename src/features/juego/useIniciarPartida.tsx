@@ -54,7 +54,7 @@ export function useIniciarPartida() {
       setError(
         causa instanceof ErrorConfigPartida
           ? causa.errores.join(' ')
-          : 'No se pudo iniciar la partida. Intente de nuevo.',
+          : 'No se pudo iniciar la partida. Intenta de nuevo.',
       );
     } finally {
       setOcupado(false);
@@ -72,7 +72,7 @@ export function useIniciarPartida() {
         setPendiente(datos);
       }
     } catch {
-      setError('No se pudo iniciar la partida. Intente de nuevo.');
+      setError('No se pudo iniciar la partida. Intenta de nuevo.');
     }
   }
 
@@ -80,7 +80,7 @@ export function useIniciarPartida() {
     <DialogoConfirmacion
       abierto={pendiente !== null}
       titulo="¿Iniciar una nueva partida?"
-      descripcion="Hay una partida en curso. Si inicia una nueva, la anterior se dará por terminada."
+      descripcion="Hay una partida en curso. Si inicias una nueva, la anterior se dará por terminada."
       textoConfirmar="Iniciar nueva partida"
       ocupado={ocupado}
       onConfirmar={() => {

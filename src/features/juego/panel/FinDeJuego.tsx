@@ -45,7 +45,7 @@ export function FinDeJuego({ partida }: { partida: PartidaCargada }) {
         config: preparada?.ok === true ? preparada.config : config,
       });
     } catch {
-      setError('No se pudo preparar la nueva partida. Intente de nuevo.');
+      setError('No se pudo preparar la nueva partida. Intenta de nuevo.');
     } finally {
       setPreparando(false);
     }

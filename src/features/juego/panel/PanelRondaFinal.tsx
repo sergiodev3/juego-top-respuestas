@@ -122,9 +122,9 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
   const numero = indice + 1;
   const falta =
     texto.trim() === ''
-      ? 'Escriba lo que respondió el jugador.'
+      ? 'Escribe lo que respondió el jugador.'
       : coincidencia === SIN_ELEGIR
-        ? 'Elija la respuesta que coincide o «Sin coincidencia».'
+        ? 'Elige la respuesta que coincide o «Sin coincidencia».'
         : null;
   const registrar: AccionPanel = {
     ...responder,
@@ -232,7 +232,7 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
             }}
             className={`${CLASE_CAMPO} mt-1`}
           >
-            <option value={SIN_ELEGIR}>Elija…</option>
+            <option value={SIN_ELEGIR}>Elige…</option>
             {pregunta.respuestas.map((respuesta, i) => (
               <option key={i} value={String(i)}>
                 {`${String(i + 1)}. ${respuesta.texto} (${String(respuesta.puntos)} pts)`}
@@ -254,7 +254,7 @@ function PreguntaFinal({ indice, pregunta, estado, vista, acciones }: PreguntaFi
           role="alert"
           className="rounded-md border-2 border-red-700 bg-red-50 px-4 py-3 text-lg font-bold text-red-900"
         >
-          Respuesta repetida: pida otra respuesta.
+          Respuesta repetida: pide otra respuesta.
         </p>
       )}
     </li>

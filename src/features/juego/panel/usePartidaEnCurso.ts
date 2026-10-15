@@ -31,11 +31,11 @@ export type CargaPartida =
     }
   | { readonly tipo: 'lista'; readonly partida: PartidaCargada };
 
-const ERROR_GUARDAR = 'No se pudo guardar la acción. El juego sigue como estaba; intente de nuevo.';
+const ERROR_GUARDAR = 'No se pudo guardar la acción. El juego sigue como estaba; intenta de nuevo.';
 
 function mensajeError(causa: unknown): string {
   if (causa instanceof ErrorPartidaTerminada) {
-    return 'La partida ya terminó. Vuelva al inicio para iniciar otra.';
+    return 'La partida ya terminó. Vuelve al inicio para iniciar otra.';
   }
   if (causa instanceof ErrorRegistroNoEncontrado) {
     return causa.message;
@@ -102,7 +102,7 @@ export function usePartidaEnCurso(partidaId: string) {
         if (vigente) {
           setCarga({
             tipo: 'noDisponible',
-            errores: ['No se pudo leer la partida. Recargue la página para intentar de nuevo.'],
+            errores: ['No se pudo leer la partida. Recarga la página para intentar de nuevo.'],
             existe: false,
             terminada: false,
           });

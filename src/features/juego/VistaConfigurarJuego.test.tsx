@@ -203,7 +203,7 @@ describe('VistaConfigurarJuego: saved games', () => {
 
     const dialogo = await screen.findByRole('dialog', { name: '¿Iniciar una nueva partida?' });
     expect(dialogo).toHaveAccessibleDescription(
-      'Hay una partida en curso. Si inicia una nueva, la anterior se dará por terminada.',
+      'Hay una partida en curso. Si inicias una nueva, la anterior se dará por terminada.',
     );
     await usuario.click(within(dialogo).getByRole('button', { name: 'Iniciar nueva partida' }));
 

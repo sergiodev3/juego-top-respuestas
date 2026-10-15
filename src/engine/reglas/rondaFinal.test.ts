@@ -141,7 +141,7 @@ describe('ronda final: RF_RESPUESTA', () => {
     expect(codigoTras(enRondaFinal, evento)).toEqual({
       ok: false,
       codigo: 'TEXTO_INVALIDO',
-      motivo: 'Escriba lo que respondió el jugador.',
+      motivo: 'Escribe lo que respondió el jugador.',
     });
   });
 
@@ -155,7 +155,7 @@ describe('ronda final: RF_RESPUESTA', () => {
     expect(codigoTras(eventos, respuesta(2, 0, 1))).toEqual({
       ok: false,
       codigo: 'RESPUESTA_REPETIDA',
-      motivo: 'El primer jugador ya dio esa respuesta. Pida otra.',
+      motivo: 'El primer jugador ya dio esa respuesta. Pide otra.',
     });
     expect(codigoTras(eventos, respuesta(2, 0, 2))).toEqual({ ok: true });
     expect(codigoTras(eventos, respuesta(2, 2, 1))).toEqual({ ok: true });

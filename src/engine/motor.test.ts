@@ -57,7 +57,7 @@ describe('reducir', () => {
   it('skips invalid events and reports them with their log index', () => {
     const estado = reducir(config, LOG_LARGO);
     expect(estado.advertencias).toEqual([
-      { indice: 9, codigo: 'SIN_EQUIPO_ROBO', motivo: 'Primero indique qué equipo intenta robar.' },
+      { indice: 9, codigo: 'SIN_EQUIPO_ROBO', motivo: 'Primero indica qué equipo intenta robar.' },
     ]);
     expect(estado.fase).toBe('juegoTerminado');
     expect(estado.puntajes).toEqual([111, 205, 70]);

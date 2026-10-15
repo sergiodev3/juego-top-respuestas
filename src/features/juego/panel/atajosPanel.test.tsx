@@ -218,7 +218,7 @@ describe('Panel keyboard shortcuts', () => {
     await usuario.keyboard('2');
     await usuario.keyboard('3');
     expect(avisoTeclado()).toHaveTextContent(
-      'Espere un momento: se está guardando la jugada anterior.',
+      'Espera un momento: se está guardando la jugada anterior.',
     );
     expect(fireEvent.keyDown(document.body, { key: ' ' })).toBe(false);
     // Mute and help never touch the saved log, so they keep working during a save.

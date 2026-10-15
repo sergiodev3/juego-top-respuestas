@@ -95,7 +95,7 @@ describe('VistaPanel: loading and layout', () => {
       within(screen.getByRole('list', { name: 'Respuestas' })).getAllByRole('listitem'),
     ).toHaveLength(5);
     expect(guia()).toHaveTextContent(
-      'Cara a cara: asigne el turno al equipo que presionó primero el botón.',
+      'Cara a cara: asigna el turno al equipo que presionó primero el botón.',
     );
   });
 
@@ -105,7 +105,7 @@ describe('VistaPanel: loading and layout', () => {
 
     const tache = await screen.findByRole('button', { name: 'Tache' });
     expect(tache).toHaveAttribute('aria-disabled', 'true');
-    expect(tache).toHaveAccessibleDescription('Primero indique qué equipo presionó el botón.');
+    expect(tache).toHaveAccessibleDescription('Primero indica qué equipo presionó el botón.');
     expect(screen.getByRole('button', { name: 'Revelar la respuesta 1' })).toHaveAttribute(
       'aria-disabled',
       'true',
@@ -127,7 +127,7 @@ describe('VistaPanel: loading and layout', () => {
     await pulsar(usuario, 'Revelar la respuesta 2');
     await pulsar(usuario, 'Turno: Equipo A');
     await pulsar(usuario, 'Revelar la respuesta 1');
-    await esperarGuia('Equipo A gana el cara a cara. Pregunte si juega o pasa.');
+    await esperarGuia('Equipo A gana el cara a cara. Pregúntale si juega o pasa.');
     await pulsar(usuario, 'Jugar');
     await pulsar(usuario, 'Revelar la respuesta 3');
     await pulsar(usuario, 'Tache');
@@ -172,7 +172,7 @@ describe('VistaPanel: loading and layout', () => {
     await pulsar(usuario, 'Deshacer');
 
     await screen.findByText(
-      'Cara a cara: asigne el turno al equipo que presionó primero el botón.',
+      'Cara a cara: asigna el turno al equipo que presionó primero el botón.',
     );
     expect(await eventosGuardados(id)).toEqual([]);
   });
@@ -191,9 +191,9 @@ describe('VistaPanel: loading and layout', () => {
     await pulsar(usuario, 'Turno: Equipo A');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'No se pudo guardar la acción. El juego sigue como estaba; intente de nuevo.',
+      'No se pudo guardar la acción. El juego sigue como estaba; intenta de nuevo.',
     );
-    expect(guia()).toHaveTextContent('Cara a cara: asigne el turno');
+    expect(guia()).toHaveTextContent('Cara a cara: asigna el turno');
     expect(await eventosGuardados(id)).toEqual([]);
   });
 
@@ -259,7 +259,7 @@ describe('VistaPanel: rounds and teams', () => {
     const propio = await screen.findByRole('button', { name: 'Pasar a Rojos' });
     expect(propio).toHaveAttribute('aria-disabled', 'true');
     expect(propio).toHaveAccessibleDescription(
-      'Pase el turno a un equipo distinto del que ganó el cara a cara.',
+      'Pasa el turno a un equipo distinto del que ganó el cara a cara.',
     );
     await pulsar(usuario, 'Pasar a Azules');
 
@@ -371,7 +371,7 @@ describe('VistaPanel: projector board', () => {
 
     expect(ventanas.open).toHaveBeenCalledWith('/tablero', 'top-respuestas-tablero');
     const dialogo = await screen.findByRole('dialog', {
-      name: 'Coloque el tablero en el proyector',
+      name: 'Coloca el tablero en el proyector',
     });
     expect(dialogo).toHaveTextContent('Pantalla completa');
     await usuario.click(within(dialogo).getByRole('button', { name: 'Entendido' }));

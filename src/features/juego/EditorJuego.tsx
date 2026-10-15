@@ -99,7 +99,7 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
         setConfirmacion('Juego guardado.');
       }
     } catch {
-      setProblemas({ titulo: 'No se pudo guardar el juego.', lista: ['Intente de nuevo.'] });
+      setProblemas({ titulo: 'No se pudo guardar el juego.', lista: ['Intenta de nuevo.'] });
     } finally {
       enVuelo.current = false;
       setOcupado(false);
@@ -131,7 +131,7 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
       }
       await inicio.iniciar({ juegoId: juego.id, config: resultado.config });
     } catch {
-      setProblemas({ titulo: 'No se pudo iniciar la partida.', lista: ['Intente de nuevo.'] });
+      setProblemas({ titulo: 'No se pudo iniciar la partida.', lista: ['Intenta de nuevo.'] });
     } finally {
       enVuelo.current = false;
       setOcupado(false);

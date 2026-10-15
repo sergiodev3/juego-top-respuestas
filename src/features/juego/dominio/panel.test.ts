@@ -45,7 +45,7 @@ describe('evaluarAccion', () => {
     expect(evaluarAccion(config, inicial, { tipo: 'TACHE' })).toEqual({
       evento: { tipo: 'TACHE' },
       habilitada: false,
-      motivo: 'Primero indique qué equipo presionó el botón.',
+      motivo: 'Primero indica qué equipo presionó el botón.',
       codigo: 'SIN_RESPONDEDOR',
     });
   });
@@ -64,10 +64,10 @@ describe('guiaPanel', () => {
 
   it('tells the host what to do next in the face-off', () => {
     expect(guiaPanel(config, estado(config, []))).toBe(
-      'Cara a cara: asigne el turno al equipo que presionó primero el botón.',
+      'Cara a cara: asigna el turno al equipo que presionó primero el botón.',
     );
     expect(guiaPanel(config, estado(config, [{ tipo: 'ASIGNAR_TURNO', equipo: 1 }]))).toBe(
-      'Responde Equipo B. Revele su respuesta o marque tache si no está en el tablero.',
+      'Responde Equipo B. Revela su respuesta o marca tache si no está en el tablero.',
     );
     expect(
       guiaPanel(
@@ -77,7 +77,7 @@ describe('guiaPanel', () => {
           { tipo: 'REVELAR', indice: 2 },
         ]),
       ),
-    ).toBe('Asigne el turno al siguiente equipo que presionó el botón.');
+    ).toBe('Asigna el turno al siguiente equipo que presionó el botón.');
     expect(
       guiaPanel(
         config,
@@ -86,7 +86,7 @@ describe('guiaPanel', () => {
           { tipo: 'REVELAR', indice: 0 },
         ]),
       ),
-    ).toBe('Equipo A gana el cara a cara. Pregunte si juega o pasa.');
+    ).toBe('Equipo A gana el cara a cara. Pregúntale si juega o pasa.');
   });
 
   it('guides play, steal and the end of the round', () => {
@@ -96,14 +96,14 @@ describe('guiaPanel', () => {
       { tipo: 'JUGAR' },
     ];
     expect(guiaPanel(config, estado(config, jugando))).toBe(
-      'Equipo A tiene el control. Revele cada acierto o marque tache.',
+      'Equipo A tiene el control. Revela cada acierto o marca tache.',
     );
     const robo: Evento[] = [...jugando, { tipo: 'TACHE' }, { tipo: 'TACHE' }, { tipo: 'TACHE' }];
     expect(guiaPanel(config, estado(config, robo))).toBe(
-      'Equipo B intenta robar. Si acierta, revele esa respuesta; si no, marque «Robo fallido».',
+      'Equipo B intenta robar. Si acierta, revela esa respuesta; si no, marca «Robo fallido».',
     );
     expect(guiaPanel(config, estado(config, [...robo, { tipo: 'ROBO_FALLIDO' }]))).toBe(
-      'Equipo A gana 40 puntos. Puede revelar las respuestas restantes y pasar a la siguiente ronda.',
+      'Equipo A gana 40 puntos. Puedes revelar las respuestas restantes y pasar a la siguiente ronda.',
     );
   });
 
@@ -117,7 +117,7 @@ describe('guiaPanel', () => {
       { tipo: 'TACHE' },
     ];
     expect(guiaPanel(TRES_EQUIPOS, estado(TRES_EQUIPOS, eventos))).toBe(
-      'Robo: asigne el turno al equipo que intentará robar.',
+      'Robo: asigna el turno al equipo que intentará robar.',
     );
   });
 });
