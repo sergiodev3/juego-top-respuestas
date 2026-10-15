@@ -54,6 +54,10 @@ export default defineConfig({
     setupFiles: ['src/test/setup.ts'],
     // jsdom + user-event tests can exceed 5 s on a loaded machine (e.g. under coverage).
     testTimeout: 15_000,
+    // Vitest's default (logical cores - 1 workers) oversubscribes the CPU with jsdom files:
+    // on a 12-thread laptop the panel tests ran 5-10x slower than alone and timed out.
+    // Half the cores keeps the same wall time with a 2-3x timing margin.
+    maxWorkers: '50%',
     coverage: {
       // `npm run test:coverage` gates the pure game engine; other layers are not measured yet.
       provider: 'v8',

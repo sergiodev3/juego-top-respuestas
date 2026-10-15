@@ -130,7 +130,12 @@ describe('PanelImportacion', () => {
     await aplicarSemillaSiHaceFalta(entorno.db);
     const { usuario } = renderizarPanel(MATRIZ_MIXTA);
 
-    await usuario.click(screen.getByLabelText('Set existente'));
+    // The radio stays disabled until the sets load; a click before that is silently ignored.
+    const setExistente = screen.getByLabelText('Set existente');
+    await waitFor(() => {
+      expect(setExistente).toBeEnabled();
+    });
+    await usuario.click(setExistente);
     await screen.findByRole('option', { name: 'Cultura general escolar' });
 
     expect(

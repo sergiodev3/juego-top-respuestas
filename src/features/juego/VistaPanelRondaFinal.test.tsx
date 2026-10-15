@@ -47,16 +47,36 @@ const HASTA_RONDA_FINAL: Evento[] = [
   { tipo: 'SIGUIENTE_RONDA' },
 ];
 
-async function crearPartidaFinal() {
+/** Player 1 answers question 1 with the top answer (40 points), then player 2 takes over. */
+const TURNO_JUGADOR_1: Evento[] = [
+  { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0, texto: 'gato' },
+  { tipo: 'RF_REVELAR', jugador: 1, pregunta: 0 },
+  { tipo: 'RF_SIGUIENTE_JUGADOR' },
+];
+
+/** Player 2 answers question 1 with the second answer (25 points). */
+const TURNO_JUGADOR_2: Evento[] = [
+  { tipo: 'RF_RESPUESTA', jugador: 2, pregunta: 0, indice: 1, texto: 'perro' },
+  { tipo: 'RF_REVELAR', jugador: 2, pregunta: 0 },
+];
+
+/**
+ * A partida already in the final round, plus `extra` events. Each test starts from the step
+ * it checks: replaying the whole flow through the UI in one test made it the slowest in the
+ * suite and pushed it past the timeout under full-suite load.
+ */
+async function crearPartidaFinal(extra: Evento[] = []) {
   const partida = await entorno.repositorios.partidas.crear({ juegoId: 'juego-1', config: CONFIG });
-  for (const evento of HASTA_RONDA_FINAL) {
+  for (const evento of [...HASTA_RONDA_FINAL, ...extra]) {
     await entorno.repositorios.partidas.agregarEvento(partida.id, evento);
   }
   return partida.id;
 }
 
-async function eventosGuardados(id: string): Promise<Evento[]> {
-  return (await entorno.repositorios.partidas.obtener(id))?.eventos ?? [];
+/** Events saved after `antes`, i.e. the ones the test produced through the panel. */
+async function eventosNuevos(id: string, antes: Evento[]): Promise<Evento[]> {
+  const eventos = (await entorno.repositorios.partidas.obtener(id))?.eventos ?? [];
+  return eventos.slice(HASTA_RONDA_FINAL.length + antes.length);
 }
 
 type Usuario = ReturnType<typeof renderizarPanel>['usuario'];
@@ -81,7 +101,7 @@ async function registrar(
 }
 
 describe('VistaPanel: final round', () => {
-  it('records answers, warns about repeats, switches player and adds the total on finish', async () => {
+  it('records and reveals an answer, then switches player with hidden answers', async () => {
     const id = await crearPartidaFinal();
     const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
 
@@ -103,6 +123,12 @@ describe('VistaPanel: final round', () => {
     expect(
       screen.getByRole('list', { name: 'Respuestas registradas de la pregunta 1' }),
     ).toHaveTextContent('Oculta mientras juega el jugador 2');
+    expect(await eventosNuevos(id, [])).toEqual(TURNO_JUGADOR_1);
+  });
+
+  it('warns about a repeated answer and blocks it until another match is chosen', async () => {
+    const id = await crearPartidaFinal(TURNO_JUGADOR_1);
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
 
     await registrar(usuario, 2, 1, 'perro', '1. TXT_F1_0 (40 pts)');
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -121,6 +147,13 @@ describe('VistaPanel: final round', () => {
       await botonHabilitado('Revelar la respuesta del jugador 2 en la pregunta 1'),
     );
     expect(await screen.findByText('Total: 65 de 200 puntos')).toBeInTheDocument();
+    expect(await eventosNuevos(id, TURNO_JUGADOR_1)).toEqual(TURNO_JUGADOR_2);
+  });
+
+  it('adds the final-round total to the playing team on finish, after confirming', async () => {
+    const antes = [...TURNO_JUGADOR_1, ...TURNO_JUGADOR_2];
+    const id = await crearPartidaFinal(antes);
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
 
     await usuario.click(await botonHabilitado('Terminar ronda final'));
     const dialogo = await screen.findByRole('dialog', { name: '¿Terminar la ronda final?' });
@@ -137,14 +170,7 @@ describe('VistaPanel: final round', () => {
     expect(screen.getByText(/Ronda final: 65 de 200 puntos\./u)).toHaveTextContent(
       'No alcanzaron la meta.',
     );
-    expect((await eventosGuardados(id)).slice(HASTA_RONDA_FINAL.length)).toEqual([
-      { tipo: 'RF_RESPUESTA', jugador: 1, pregunta: 0, indice: 0, texto: 'gato' },
-      { tipo: 'RF_REVELAR', jugador: 1, pregunta: 0 },
-      { tipo: 'RF_SIGUIENTE_JUGADOR' },
-      { tipo: 'RF_RESPUESTA', jugador: 2, pregunta: 0, indice: 1, texto: 'perro' },
-      { tipo: 'RF_REVELAR', jugador: 2, pregunta: 0 },
-      { tipo: 'RF_TERMINAR' },
-    ]);
+    expect(await eventosNuevos(id, antes)).toEqual([{ tipo: 'RF_TERMINAR' }]);
     expect((await entorno.repositorios.partidas.obtener(id))?.estado).toBe('terminada');
   });
 
