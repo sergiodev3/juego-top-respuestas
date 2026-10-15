@@ -17,7 +17,8 @@ No React, React DOM, Dexie, or imports from `@/features`, `@/app`, or `@/db` (en
 | `esquemaConfigPartida`             | Zod schema for the shape of a stored config snapshot (rules stay in `validarConfig`).       |
 | `esquemaEvento`                    | Zod discriminated union for the shape of every stored event, tied to the `Evento` type.     |
 | `deshacer(eventos)`                | The log without its last event (undo).                                                      |
-| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers. |     | Types | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ... |
+| `proyectarTablero(config, estado)` | `VistaTablero`: what the projector may show. JSON-serializable, never leaks hidden answers. |
+| Types                              | `ConfigPartida`, `PreguntaSnapshot`, `Evento`, `EstadoJuego`, `Fase`, `CodigoRechazo`, ...  |
 
 Teams are addressed by index (0-3, keys A-D). `ConfigPartida` is a snapshot (teams, rounds with their questions and multipliers, strike limit, optional final round), so replay never depends on the question bank. Answers in a `PreguntaSnapshot` are sorted by points, desc.
 
