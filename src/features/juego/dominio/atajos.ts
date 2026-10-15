@@ -13,12 +13,19 @@ export type ComandoAtajo =
   | { readonly tipo: 'jugar' }
   | { readonly tipo: 'temporizador' }
   | { readonly tipo: 'revelarTodas' }
+  /** Final round: the match of the current question (`null` = no match). */
+  | { readonly tipo: 'rfCoincidencia'; readonly indice: number | null }
+  /** Final round: record the current question. */
+  | { readonly tipo: 'rfRegistrar' }
   | { readonly tipo: 'silenciar' }
   | { readonly tipo: 'ayuda' };
 
 export interface ContextoAtajos {
   readonly fase: Fase;
-  /** Answers of the current regular-round question. */
+  /**
+   * Answers of the current question: the regular round's, or in the final round the current
+   * question's (the first one the player in turn has not answered; 0 once all are recorded).
+   */
   readonly respuestas: number;
   readonly equipos: number;
   /** Whether "Jugar" is available, so the space bar can take it as the next step. */
@@ -72,10 +79,27 @@ function comandoDeRonda(tecla: string, contexto: ContextoAtajos): ComandoAtajo |
   }
 }
 
+/** Final-round shortcuts for the current question: its match (`0` = none) and `Enter`. */
+function comandoDeRondaFinal(tecla: string, contexto: ContextoAtajos): ComandoAtajo | null {
+  if (contexto.respuestas === 0) {
+    return null;
+  }
+  if (tecla === 'Enter') {
+    return { tipo: 'rfRegistrar' };
+  }
+  if (tecla === '0') {
+    return { tipo: 'rfCoincidencia', indice: null };
+  }
+  const numero = Number(tecla);
+  return /^[1-9]$/u.test(tecla) && numero <= Math.min(contexto.respuestas, MAXIMO_RESPUESTAS)
+    ? { tipo: 'rfCoincidencia', indice: numero - 1 }
+    : null;
+}
+
 /**
  * The command for a key in the current context, or `null` when the key means nothing there.
- * Undo (`Z`), mute (`M`) and help (`?`) work in every phase; the final round only adds the
- * timer on the space bar (its answers are matched with the picker), and an ended game nothing.
+ * Undo (`Z`), mute (`M`) and help (`?`) work in every phase; the final round has the timer on
+ * the space bar plus the current question's match and `Enter`, and an ended game nothing.
  */
 export function comandoDeTecla(tecla: string, contexto: ContextoAtajos): ComandoAtajo | null {
   const normalizada = normalizarTecla(tecla);
@@ -91,7 +115,10 @@ export function comandoDeTecla(tecla: string, contexto: ContextoAtajos): Comando
     default:
       break;
   }
-  if (contexto.fase === 'rondaFinal' || contexto.fase === 'juegoTerminado') {
+  if (contexto.fase === 'rondaFinal') {
+    return comandoDeRondaFinal(normalizada, contexto);
+  }
+  if (contexto.fase === 'juegoTerminado') {
     return null;
   }
   return comandoDeRonda(normalizada, contexto);

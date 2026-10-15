@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 import { DialogoInformacion } from '@/shared/ui/DialogoInformacion';
 
@@ -32,6 +32,14 @@ const SIEMPRE: readonly Atajo[] = [
 ];
 
 const RONDA_FINAL: readonly Atajo[] = [
+  {
+    teclas: ['1', '…', '8', '0'],
+    descripcion: 'Elegir la respuesta que coincide en la pregunta actual (0 = sin coincidencia).',
+  },
+  {
+    teclas: ['Enter'],
+    descripcion: 'Registrar la pregunta actual y pasar a la siguiente.',
+  },
   { teclas: ['Espacio'], descripcion: 'Iniciar o pausar el tiempo del jugador.' },
 ];
 
@@ -65,9 +73,12 @@ function Seccion({
   atajos: readonly Atajo[];
   children?: ReactNode;
 }) {
+  const id = useId();
   return (
-    <section className="space-y-2">
-      <h3 className="font-bold text-slate-900">{titulo}</h3>
+    <section aria-labelledby={id} className="space-y-2">
+      <h3 id={id} className="font-bold text-slate-900">
+        {titulo}
+      </h3>
       <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-2">
         {atajos.map((atajo) => (
           <div key={atajo.descripcion} className="contents">
@@ -102,8 +113,11 @@ export function HojaAtajos({ abierta, onCerrar }: HojaAtajosProps) {
         <Seccion titulo="En cualquier momento" atajos={SIEMPRE} />
         <Seccion titulo="Ronda final" atajos={RONDA_FINAL}>
           <p>
-            Las respuestas se registran con el campo de texto y la lista de coincidencias; los
-            números, <kbd>X</kbd>, <kbd>A</kbd>–<kbd>D</kbd> y <kbd>R</kbd> no hacen nada.
+            La pregunta actual es la primera que el jugador en turno no ha respondido; está
+            resaltada. Escribir lo que dijo es opcional: con una coincidencia se guarda el texto de
+            la encuesta. Si escribes en el campo, los números se quedan como texto y{' '}
+            <kbd>Enter</kbd> registra esa pregunta. <kbd>X</kbd>, <kbd>A</kbd>–<kbd>D</kbd> y{' '}
+            <kbd>R</kbd> no hacen nada.
           </p>
         </Seccion>
         <p className="border-t border-slate-200 pt-3">

@@ -226,7 +226,8 @@ describe('VistaTablero', () => {
             oculto: false,
             respuestas: [
               { numero: 1, revelada: true, texto: 'Perro', puntos: 30 },
-              { numero: 2, revelada: false },
+              { numero: 2, revelada: true, texto: '', puntos: 0 },
+              { numero: 3, revelada: false },
             ],
           },
         ],
@@ -246,6 +247,8 @@ describe('VistaTablero', () => {
     const jugador2 = screen.getByRole('region', { name: 'Jugador 2' });
     expect(within(jugador2).getByText('Perro')).toBeInTheDocument();
     expect(within(jugador2).getByText('30')).toBeInTheDocument();
+    // An answer recorded without text and without a match.
+    expect(within(jugador2).getByText('Sin respuesta')).toBeInTheDocument();
     expect(screen.getByText('Total: 75 de 200')).toBeInTheDocument();
     expect(screen.getByLabelText('Tiempo restante: 13 segundos')).toHaveTextContent('13');
   });

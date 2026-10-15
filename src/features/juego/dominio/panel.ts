@@ -48,16 +48,45 @@ export function nombreEquipo(config: ConfigPartida, indice: number | null): stri
   return indice === null ? '' : (config.equipos[indice]?.nombre ?? '');
 }
 
+/**
+ * The final-round question the keyboard works on: the first one the player in turn has not
+ * answered yet. `null` outside the final round or once that player answered all of them.
+ */
+export function preguntaActualRondaFinal(estado: EstadoJuego): number | null {
+  const { rondaFinal } = estado;
+  if (estado.fase !== 'rondaFinal' || rondaFinal === null) {
+    return null;
+  }
+  const respuestas = rondaFinal.jugadorActual === 1 ? rondaFinal.jugador1 : rondaFinal.jugador2;
+  const pregunta = respuestas.findIndex((respuesta) => respuesta === null);
+  return pregunta === -1 ? null : pregunta;
+}
+
+function guiaRondaFinal(config: ConfigPartida, estado: EstadoJuego): string {
+  const { rondaFinal } = estado;
+  if (rondaFinal === null) {
+    return '';
+  }
+  const { jugadorActual } = rondaFinal;
+  const inicio = `Ronda final: juega ${nombreEquipo(config, rondaFinal.equipo)}.`;
+  const pregunta = preguntaActualRondaFinal(estado);
+  if (pregunta === null) {
+    const despues = jugadorActual === 1 ? 'pasa al siguiente jugador' : 'termina la ronda final';
+    const total = String(config.rondaFinal?.preguntas.length ?? 0);
+    return `${inicio} El jugador ${String(jugadorActual)} ya respondió las ${total} preguntas: revela sus respuestas y ${despues}.`;
+  }
+  const respuestas = config.rondaFinal?.preguntas[pregunta]?.respuestas.length ?? 0;
+  return `${inicio} Jugador ${String(jugadorActual)}, pregunta ${String(pregunta + 1)}: elige la coincidencia con 1–${String(respuestas)} (0 = sin coincidencia) y presiona Enter.`;
+}
+
 /** One sentence telling the host what to do next. */
 export function guiaPanel(config: ConfigPartida, estado: EstadoJuego): string {
-  const { ronda, rondaFinal } = estado;
+  const { ronda } = estado;
   switch (estado.fase) {
     case 'juegoTerminado':
       return 'El juego terminó.';
     case 'rondaFinal':
-      return rondaFinal === null
-        ? ''
-        : `Ronda final: juega ${nombreEquipo(config, rondaFinal.equipo)}. Turno del jugador ${String(rondaFinal.jugadorActual)}.`;
+      return guiaRondaFinal(config, estado);
     default:
       break;
   }

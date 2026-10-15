@@ -62,11 +62,13 @@ The board's round view carries `fallosCaraACara`, the number of face-off misses 
 | `SIGUIENTE_RONDA`                                   | finDeRonda                  | Next face-off, the final round, or the end of the game.                                                                                                                                    |
 | `AJUSTAR_PUNTOS(equipo, delta)`                     | any but juegoTerminado      | Manual correction, non-zero integer, scores may go negative.                                                                                                                               |
 | `TERMINAR_JUEGO`                                    | any but juegoTerminado      | End the game.                                                                                                                                                                              |
-| `RF_RESPUESTA { jugador, pregunta, indice, texto }` | rondaFinal                  | Record (or correct) an answer; player 2 repeating player 1 is `RESPUESTA_REPETIDA`.                                                                                                        |
+| `RF_RESPUESTA { jugador, pregunta, indice, texto }` | rondaFinal                  | Record (or correct) an answer; player 2 repeating player 1's `indice` is `RESPUESTA_REPETIDA`. Blank `texto` only without a match (`TEXTO_INVALIDO`).                                      |
 | `RF_REVELAR { jugador, pregunta }`                  | rondaFinal                  | Reveal a recorded answer and its points.                                                                                                                                                   |
 | `RF_SIGUIENTE_JUGADOR` / `RF_TERMINAR`              | rondaFinal                  | Switch to player 2 / end with `{ total, meta, superoMeta }` and add `total` to the playing team's score.                                                                                   |
 
 Rejections carry a stable `codigo` (`FASE_INVALIDA`, `EQUIPO_INVALIDO`, `RESPUESTA_YA_REVELADA`, `SIN_EQUIPO_ROBO`, `RESPUESTA_REPETIDA`, `JUEGO_TERMINADO`, ...) and a user-facing Spanish `motivo`. Replay also reports `EVENTO_MALFORMADO` for a stored event whose shape fails `esquemaEvento`.
+
+Typing is optional in the final round: for a match the panel stores the survey answer's text when the host typed nothing, so a stored `RF_RESPUESTA` always says what the board shows; an unmatched answer may stay blank (the board shows "Sin respuesta").
 
 Final-round scoring: `RF_TERMINAR` adds the final-round total (the revealed answers of both players, the same value as `resultado.total`) to the playing team's score. `TERMINAR_JUEGO` during the final round leaves `resultado: null` and adds nothing.
 

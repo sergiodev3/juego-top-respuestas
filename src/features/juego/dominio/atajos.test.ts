@@ -65,14 +65,37 @@ describe('comandoDeTecla', () => {
     expect(comandoDeTecla(' ', contexto('juegoTerminado'))).toBeNull();
   });
 
-  it('keeps only the timer, undo, mute and help in the final round', () => {
+  it('picks the match of the current final-round question with 1 to 8 and 0 for no match', () => {
+    const final = contexto('rondaFinal');
+    expect(comandoDeTecla('1', final)).toEqual({ tipo: 'rfCoincidencia', indice: 0 });
+    expect(comandoDeTecla('5', final)).toEqual({ tipo: 'rfCoincidencia', indice: 4 });
+    expect(comandoDeTecla('6', final)).toBeNull();
+    expect(comandoDeTecla('0', final)).toEqual({ tipo: 'rfCoincidencia', indice: null });
+    expect(comandoDeTecla('8', contexto('rondaFinal', { respuestas: 8 }))).toEqual({
+      tipo: 'rfCoincidencia',
+      indice: 7,
+    });
+  });
+
+  it('records the current final-round question with Enter', () => {
+    expect(comandoDeTecla('Enter', contexto('rondaFinal'))).toEqual({ tipo: 'rfRegistrar' });
+  });
+
+  it('keeps only the timer, undo, mute and help in the final round once every answer is in', () => {
     const final = contexto('rondaFinal', { respuestas: 0 });
-    for (const tecla of ['1', 'x', 'a', 'b', 'r']) {
+    for (const tecla of ['1', '0', 'Enter', 'x', 'a', 'b', 'r']) {
       expect(comandoDeTecla(tecla, final)).toBeNull();
     }
+    expect(comandoDeTecla(' ', final)).toEqual({ tipo: 'temporizador' });
     expect(comandoDeTecla('z', final)).toEqual({ tipo: 'deshacer' });
     expect(comandoDeTecla('m', final)).toEqual({ tipo: 'silenciar' });
     expect(comandoDeTecla('?', final)).toEqual({ tipo: 'ayuda' });
+  });
+
+  it('never assigns turns, strikes or reveals everything in the final round', () => {
+    for (const tecla of ['x', 'a', 'b', 'r']) {
+      expect(comandoDeTecla(tecla, contexto('rondaFinal'))).toBeNull();
+    }
   });
 
   it('keeps only undo, mute and help once the game is over', () => {

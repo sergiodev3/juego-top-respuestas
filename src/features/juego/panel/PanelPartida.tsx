@@ -18,6 +18,7 @@ import { PreguntaActual } from './PreguntaActual';
 import { useAbrirTablero } from './useAbrirTablero';
 import { useAccionesPanel } from './useAccionesPanel';
 import { useAtajosPanel } from './useAtajosPanel';
+import { useBorradoresRondaFinal } from './useBorradoresRondaFinal';
 import type { PartidaCargada, PartidaEnCurso } from './usePartidaEnCurso';
 import { useTemporizador, type RelojTemporizador } from './useTemporizador';
 
@@ -77,10 +78,12 @@ export function PanelPartida({
   );
   const enRondaFinal = estado.fase === 'rondaFinal';
   const { restante, total, corriendo } = temporizador.temporizador;
-  const { aviso } = useAtajosPanel({
+  const borradores = useBorradoresRondaFinal(config, estado, acciones);
+  const { aviso, avisar } = useAtajosPanel({
     config,
     estado,
     acciones,
+    borradores,
     guardando: control.guardando,
     temporizador,
     alternarSilencio,
@@ -151,6 +154,8 @@ export function PanelPartida({
                 vista={vista.rondaFinal}
                 acciones={acciones}
                 control={temporizador}
+                borradores={borradores}
+                onAviso={avisar}
               />
             ) : (
               <>

@@ -173,6 +173,11 @@ describe('Panel keyboard shortcuts', () => {
     const hoja = await screen.findByRole('dialog', { name: 'Atajos de teclado' });
     expect(within(hoja).getByText('Deshacer la última acción.')).toBeInTheDocument();
     expect(hoja.querySelectorAll('kbd').length).toBeGreaterThan(8);
+    const final = within(hoja).getByRole('region', { name: 'Ronda final' });
+    expect(final).toHaveTextContent(
+      'Elegir la respuesta que coincide en la pregunta actual (0 = sin coincidencia).',
+    );
+    expect(final).toHaveTextContent('Registrar la pregunta actual y pasar a la siguiente.');
 
     await usuario.keyboard('?');
     expect(screen.queryByRole('dialog', { name: 'Atajos de teclado' })).not.toBeInTheDocument();

@@ -10,6 +10,7 @@ import {
   eventoRevelar,
   ganadoresJuego,
   guiaPanel,
+  preguntaActualRondaFinal,
   respuestasOcultas,
 } from './panel';
 
@@ -118,6 +119,62 @@ describe('guiaPanel', () => {
     ];
     expect(guiaPanel(TRES_EQUIPOS, estado(TRES_EQUIPOS, eventos))).toBe(
       'Robo: asigna el turno al equipo que intentará robar.',
+    );
+  });
+});
+
+/** One x1 round won by team A (100 points), then the final round. */
+const CON_FINAL = configPrueba({
+  rondas: configPrueba().rondas.slice(0, 1),
+  rondaFinal: RONDA_FINAL,
+});
+const EN_RONDA_FINAL: Evento[] = [
+  { tipo: 'ASIGNAR_TURNO', equipo: 0 },
+  { tipo: 'REVELAR', indice: 0 },
+  { tipo: 'JUGAR' },
+  ...[1, 2, 3, 4].map((indice): Evento => ({ tipo: 'REVELAR', indice })),
+  { tipo: 'SIGUIENTE_RONDA' },
+];
+function respuestaFinal(jugador: 1 | 2, pregunta: number): Evento {
+  return { tipo: 'RF_RESPUESTA', jugador, pregunta, indice: null, texto: '' };
+}
+
+describe('preguntaActualRondaFinal', () => {
+  it('is the first question the player in turn has not answered, or null once all are in', () => {
+    expect(preguntaActualRondaFinal(estado(CON_FINAL, EN_RONDA_FINAL))).toBe(0);
+    expect(
+      preguntaActualRondaFinal(
+        estado(CON_FINAL, [...EN_RONDA_FINAL, respuestaFinal(1, 0), respuestaFinal(1, 2)]),
+      ),
+    ).toBe(1);
+    const todas = [0, 1, 2, 3, 4].map((pregunta) => respuestaFinal(1, pregunta));
+    expect(preguntaActualRondaFinal(estado(CON_FINAL, [...EN_RONDA_FINAL, ...todas]))).toBeNull();
+    expect(
+      preguntaActualRondaFinal(
+        estado(CON_FINAL, [...EN_RONDA_FINAL, ...todas, { tipo: 'RF_SIGUIENTE_JUGADOR' }]),
+      ),
+    ).toBe(0);
+    expect(preguntaActualRondaFinal(estado(CON_FINAL, []))).toBeNull();
+  });
+});
+
+describe('guiaPanel in the final round', () => {
+  it('names the current question and its keys', () => {
+    expect(guiaPanel(CON_FINAL, estado(CON_FINAL, [...EN_RONDA_FINAL, respuestaFinal(1, 0)]))).toBe(
+      'Ronda final: juega Equipo A. Jugador 1, pregunta 2: elige la coincidencia con 1–5 (0 = sin coincidencia) y presiona Enter.',
+    );
+  });
+
+  it('says what comes next once the player answered every question', () => {
+    const todas = (jugador: 1 | 2) =>
+      [0, 1, 2, 3, 4].map((pregunta) => respuestaFinal(jugador, pregunta));
+    const jugador1 = [...EN_RONDA_FINAL, ...todas(1)];
+    expect(guiaPanel(CON_FINAL, estado(CON_FINAL, jugador1))).toBe(
+      'Ronda final: juega Equipo A. El jugador 1 ya respondió las 5 preguntas: revela sus respuestas y pasa al siguiente jugador.',
+    );
+    const jugador2 = [...jugador1, { tipo: 'RF_SIGUIENTE_JUGADOR' } as const, ...todas(2)];
+    expect(guiaPanel(CON_FINAL, estado(CON_FINAL, jugador2))).toBe(
+      'Ronda final: juega Equipo A. El jugador 2 ya respondió las 5 preguntas: revela sus respuestas y termina la ronda final.',
     );
   });
 });

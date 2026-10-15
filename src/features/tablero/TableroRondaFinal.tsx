@@ -13,6 +13,11 @@ interface TableroRondaFinalProps {
   temporizador: Temporizador | null;
 }
 
+/** Typing is optional in the panel: an answer recorded blank (no match) reads "Sin respuesta". */
+function textoRespuesta(texto: string | undefined): string {
+  return texto === undefined || texto.trim() === '' ? 'Sin respuesta' : texto;
+}
+
 function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
   const idTitulo = useId();
   return (
@@ -41,7 +46,7 @@ function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
             >
               {respuesta.revelada && (
                 <>
-                  <span className="flex-1 uppercase">{respuesta.texto}</span>
+                  <span className="flex-1 uppercase">{textoRespuesta(respuesta.texto)}</span>
                   <span className="tabular-nums text-amber-300">{respuesta.puntos}</span>
                 </>
               )}

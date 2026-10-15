@@ -23,6 +23,7 @@ export {
   ganadoresJuego,
   guiaPanel,
   nombreEquipo,
+  preguntaActualRondaFinal,
   proyectarTotalRondaFinal,
   respuestasOcultas,
   type Confirmacion,

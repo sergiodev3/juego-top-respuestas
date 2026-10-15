@@ -95,6 +95,11 @@ function responder(
   if (jugador === 2 && indice !== null && rondaFinal.jugador1[pregunta]?.indice === indice) {
     return rechazar('RESPUESTA_REPETIDA');
   }
+  // Typing is optional: a blank text is only stored for an unmatched answer. For a match the
+  // panel stores the survey answer's text, so every stored event still says what was shown.
+  if (indice !== null && texto.trim() === '') {
+    return rechazar('TEXTO_INVALIDO', 'Una respuesta con coincidencia necesita su texto.');
+  }
   // Answering again corrects the previous answer, which must then be revealed again.
   const siguiente = conRespuesta(rondaFinal, jugador, pregunta, { indice, texto, revelada: false });
   return aceptar({ ...estado, rondaFinal: siguiente });

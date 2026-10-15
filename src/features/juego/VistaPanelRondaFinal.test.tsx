@@ -100,6 +100,84 @@ async function registrar(
   );
 }
 
+/** Waits until the highlighted current question is `numero` (1-based). */
+async function esperarPreguntaActual(numero: number) {
+  await waitFor(() => {
+    const lista = screen.getByRole('list', { name: 'Preguntas de la ronda final' });
+    expect(within(lista).getByRole('listitem', { current: 'step' })).toHaveTextContent(
+      `Pregunta ${String(numero)}:`,
+    );
+  });
+}
+
+function respuestaJugador1(pregunta: number, indice: number | null, texto: string): Evento {
+  return { tipo: 'RF_RESPUESTA', jugador: 1, pregunta, indice, texto };
+}
+
+describe('VistaPanel: final round keyboard', () => {
+  it('records the five answers with digits and Enter only, without typing', async () => {
+    const id = await crearPartidaFinal();
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+    await screen.findByRole('heading', { name: 'Ronda final' });
+
+    for (const [numero, teclas] of ['1', '2', '0', '3', '4'].entries()) {
+      await esperarPreguntaActual(numero + 1);
+      await usuario.keyboard(`${teclas}{Enter}`);
+    }
+
+    expect(
+      await screen.findByText(/El jugador 1 ya respondió las 5 preguntas/u),
+    ).toBeInTheDocument();
+    expect(await eventosNuevos(id, [])).toEqual([
+      respuestaJugador1(0, 0, 'TXT_F1_0'),
+      respuestaJugador1(1, 1, 'TXT_F2_1'),
+      respuestaJugador1(2, null, ''),
+      respuestaJugador1(3, 2, 'TXT_F4_2'),
+      respuestaJugador1(4, 3, 'TXT_F5_3'),
+    ]);
+    expect(
+      screen.getByRole('list', { name: 'Respuestas registradas de la pregunta 3' }),
+    ).toHaveTextContent('Jugador 1: Sin respuesta → Sin coincidencia (0 pts)');
+  });
+
+  it('records once with Enter in the answer field and moves to the next question', async () => {
+    const id = await crearPartidaFinal();
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+
+    await esperarPreguntaActual(1);
+    await usuario.selectOptions(
+      screen.getByLabelText('Coincidencia del jugador 1 en la pregunta 1'),
+      '1. TXT_F1_0 (40 pts)',
+    );
+    await usuario.type(
+      screen.getByLabelText('Respuesta del jugador 1 a la pregunta 1'),
+      'gato 2{Enter}',
+    );
+    await esperarPreguntaActual(2);
+    // The digit and the space stayed text, and the window shortcut did not record again.
+    expect(screen.getByRole('status', { name: 'Aviso del teclado' })).toBeEmptyDOMElement();
+    expect(await eventosNuevos(id, [])).toEqual([respuestaJugador1(0, 0, 'gato 2')]);
+  });
+
+  it('warns about a repeat picked with the keyboard and does not record it', async () => {
+    const id = await crearPartidaFinal(TURNO_JUGADOR_1);
+    const { usuario } = renderizarPanel({ repositorios: entorno.repositorios, partidaId: id });
+    await esperarPreguntaActual(1);
+
+    await usuario.keyboard('1');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Respuesta repetida');
+    await usuario.keyboard('{Enter}');
+    expect(screen.getByRole('status', { name: 'Aviso del teclado' })).toHaveTextContent(
+      'El primer jugador ya dio esa respuesta. Pide otra.',
+    );
+    await usuario.keyboard('2{Enter}');
+    await esperarPreguntaActual(2);
+    expect(await eventosNuevos(id, TURNO_JUGADOR_1)).toEqual([
+      { tipo: 'RF_RESPUESTA', jugador: 2, pregunta: 0, indice: 1, texto: 'TXT_F1_1' },
+    ]);
+  });
+});
+
 describe('VistaPanel: final round', () => {
   it('records and reveals an answer, then switches player with hidden answers', async () => {
     const id = await crearPartidaFinal();
