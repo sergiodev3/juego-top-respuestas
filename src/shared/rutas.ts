@@ -47,3 +47,33 @@ export function rutaPanel(partidaId: string): string {
 export function rutaEditarPregunta(setId: string, preguntaId: string): string {
   return generatePath(RUTAS.bancoPregunta, { setId, preguntaId });
 }
+
+export interface OpcionesImpresion {
+  set?: string;
+  juego?: string;
+  porHoja?: 2 | 4;
+  /** Adds the paper scoreboard sheet. */
+  marcador?: boolean;
+}
+
+/**
+ * `/impresion?set=<id>&por-hoja=4&marcador=1`; without options, the source picker at
+ * `/impresion`. Defaults (2 cards per sheet, no scoreboard sheet) are left out of the URL.
+ */
+export function rutaImpresion({ set, juego, porHoja, marcador }: OpcionesImpresion = {}): string {
+  const parametros = new URLSearchParams();
+  if (set !== undefined) {
+    parametros.set('set', set);
+  }
+  if (juego !== undefined) {
+    parametros.set('juego', juego);
+  }
+  if (porHoja === 4) {
+    parametros.set('por-hoja', String(porHoja));
+  }
+  if (marcador === true) {
+    parametros.set('marcador', '1');
+  }
+  const consulta = parametros.toString();
+  return consulta === '' ? RUTAS.impresion : `${RUTAS.impresion}?${consulta}`;
+}

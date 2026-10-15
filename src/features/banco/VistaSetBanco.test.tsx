@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { RepositoriosProvider } from '@/db/RepositoriosProvider';
 import { aplicarSemillaSiHaceFalta } from '@/db/semilla';
-import { RUTAS, rutaSetBanco } from '@/shared/rutas';
+import { RUTAS, rutaImpresion, rutaSetBanco } from '@/shared/rutas';
 import { crearEntornoPrueba } from '@/test/baseDatosPrueba';
 
 import { VistaSetBanco } from './VistaSetBanco';
@@ -23,11 +23,9 @@ afterEach(() => {
   entorno.db.close();
 });
 
-async function renderizarSetEjemplo() {
-  await aplicarSemillaSiHaceFalta(entorno.db);
-  const [set] = await entorno.repositorios.sets.listar();
+function renderizarSet(setId: string) {
   const router = createMemoryRouter([{ path: RUTAS.bancoSet, element: <VistaSetBanco /> }], {
-    initialEntries: [rutaSetBanco(set?.id ?? '')],
+    initialEntries: [rutaSetBanco(setId)],
   });
   render(
     <RepositoriosProvider repositorios={entorno.repositorios}>
@@ -35,6 +33,12 @@ async function renderizarSetEjemplo() {
     </RepositoriosProvider>,
   );
   return { usuario: userEvent.setup() };
+}
+
+async function renderizarSetEjemplo() {
+  await aplicarSemillaSiHaceFalta(entorno.db);
+  const [set] = await entorno.repositorios.sets.listar();
+  return { ...renderizarSet(set?.id ?? ''), setId: set?.id ?? '' };
 }
 
 describe('VistaSetBanco', () => {
@@ -57,5 +61,28 @@ describe('VistaSetBanco', () => {
     const lista = await screen.findByRole('list');
     await expect.poll(() => within(lista).queryAllByRole('listitem').length).toBe(1);
     expect(within(lista).getByText('Menciona un animal que vive en el mar')).toBeInTheDocument();
+  });
+
+  it('links to the printable cards of the set', async () => {
+    const { setId } = await renderizarSetEjemplo();
+
+    expect(await screen.findByRole('link', { name: 'Imprimir tarjetas' })).toHaveAttribute(
+      'href',
+      rutaImpresion({ set: setId }),
+    );
+  });
+
+  it('explains instead of linking to print when the set has no questions', async () => {
+    const vacio = await entorno.repositorios.sets.crear({
+      nombre: 'Vacío',
+      materia: '',
+      grupo: '',
+    });
+    renderizarSet(vacio.id);
+
+    expect(
+      await screen.findByText('Agrega preguntas para poder imprimir tarjetas.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Imprimir tarjetas' })).not.toBeInTheDocument();
   });
 });

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { RepositoriosProvider } from '@/db/RepositoriosProvider';
 import { crearJuegoPorDefecto } from '@/shared/modelo';
-import { RUTAS, rutaConfigurarJuego } from '@/shared/rutas';
+import { RUTAS, rutaConfigurarJuego, rutaImpresion } from '@/shared/rutas';
 import { datosPreguntaPrueba, PREGUNTAS_CIENCIAS, sembrarBancoPrueba } from '@/test/bancoPrueba';
 import { crearEntornoPrueba } from '@/test/baseDatosPrueba';
 import { configPrueba } from '@/test/fabricasPartida';
@@ -265,6 +265,27 @@ describe('VistaConfigurarJuego: saved games', () => {
     await usuario.click(screen.getByRole('button', { name: 'Iniciar el juego Repaso' }));
     expect(await screen.findByText(/^Panel /u)).toBeInTheDocument();
     expect((await entorno.repositorios.partidas.obtenerEnCurso())?.juegoId).toBe(repaso.id);
+  });
+
+  it('links each saved game and the editor of a saved game to its printable cards', async () => {
+    const juego = await importarYJugar();
+    renderizar(RUTAS.configurarJuego);
+
+    expect(
+      await screen.findByRole('link', { name: 'Imprimir tarjetas del juego Repaso' }),
+    ).toHaveAttribute('href', rutaImpresion({ juego: juego.id }));
+    // The new-game form has nothing saved to print yet.
+    expect(screen.queryByRole('link', { name: 'Imprimir tarjetas' })).not.toBeInTheDocument();
+  });
+
+  it('offers printing from the editor once the game is saved', async () => {
+    const juego = await importarYJugar();
+    renderizar(rutaConfigurarJuego(juego.id));
+
+    expect(await screen.findByRole('link', { name: 'Imprimir tarjetas' })).toHaveAttribute(
+      'href',
+      rutaImpresion({ juego: juego.id }),
+    );
   });
 
   it('says when the game does not exist', async () => {

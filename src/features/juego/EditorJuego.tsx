@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useId, useMemo, useRef, useState, type SubmitEvent } from 'react';
+import { Link } from 'react-router';
 
 import { useRepositorios } from '@/db/contextoRepositorios';
 import {
@@ -9,6 +10,7 @@ import {
   type Juego,
   type Pregunta,
 } from '@/shared/modelo';
+import { rutaImpresion } from '@/shared/rutas';
 import { AvisoError } from '@/shared/ui/AvisoError';
 import {
   CLASE_BOTON_PRIMARIO,
@@ -219,7 +221,22 @@ export function EditorJuego({ juegoId: juegoIdInicial, inicial, aleatorio }: Edi
           >
             Iniciar partida
           </button>
+          {juegoId !== null && (
+            // Prints the saved version of the game; unsaved edits are not included.
+            <Link
+              to={rutaImpresion({ juego: juegoId })}
+              className={CLASE_BOTON_SECUNDARIO}
+              aria-describedby={`${id}-imprimir-nota`}
+            >
+              Imprimir tarjetas
+            </Link>
+          )}
         </div>
+        {juegoId !== null && (
+          <p id={`${id}-imprimir-nota`} className="text-sm text-slate-600">
+            Las tarjetas se imprimen con la última versión guardada del juego.
+          </p>
+        )}
       </div>
       {inicio.dialogo}
     </form>

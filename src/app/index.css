@@ -14,13 +14,19 @@
   --text-tablero-2xl: clamp(3rem, min(9vw, 14vh), 11rem);
 }
 
+/* Printed host cards (`/impresion`): letter paper, 10 mm margins; each sheet fills one page. */
+@page {
+  size: letter;
+  margin: 10mm;
+}
+
 @layer base {
   html {
     color-scheme: light;
   }
 
   body {
-    @apply min-h-dvh bg-slate-50 text-slate-900 antialiased;
+    @apply min-h-dvh bg-slate-50 text-slate-900 antialiased print:min-h-0 print:bg-white print:text-black;
   }
 
   /* Always-visible keyboard focus ring (accessibility requirement). */
