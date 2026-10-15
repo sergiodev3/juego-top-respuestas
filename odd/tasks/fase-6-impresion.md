@@ -58,6 +58,8 @@ Runner: Vitest. Pure domain (cards from set/game, sheet grouping, scoreboard row
 - T6.2 commit `054d7dd`.
 - T6.3 (parent inline — one doc file, already understood): CLAUDE.md "Printable host cards (Fase 6)" section. Checks: full suite 66 files / 660 passed (T6.2 spot check), lint 0, typecheck and format clean, build OK with no chunk-size warning (39 precached).
 
+- T6.3 commit `b4167f7`; RDD medium (range `80002c1..b4167f7`, 21 files / 563 lines); user granted; review-reliability approved; acknowledged (lineage review-3fc7bb5510a73f99). Last reviewed commit: `b4167f7`. Advisory (S, informational, not acted on): `HojaMarcador.tsx:35` column keys use `etiqueta` (unique by construction: "R1", "R2 x2", "Ronda final", "Total").
+
 ## Next step
 
-RDD for `80002c1..HEAD`, then the user's manual test in a real print preview (Chrome/Edge: 2 and 4 per sheet, long answers, scoreboard, no trailing blank page) and approval before Fase 7.
+The the user's manual test in a real print preview (Chrome/Edge: 2 and 4 per sheet, long answers, scoreboard, no trailing blank page) and approval before Fase 7.
