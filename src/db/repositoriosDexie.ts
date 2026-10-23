@@ -22,6 +22,7 @@ import {
   type RepositorioSets,
 } from './repositorios';
 import { crearServicioImportacion } from './servicioImportacionDexie';
+import { crearServicioRespaldos } from './servicioRespaldosDexie';
 
 const compararTexto = new Intl.Collator('es', { sensitivity: 'base', numeric: true }).compare;
 
@@ -261,5 +262,6 @@ export function crearRepositoriosDexie(
     juegos: crearRepositorioJuegos(db, dependencias),
     partidas: crearRepositorioPartidas(db, dependencias),
     importacion: crearServicioImportacion(db, dependencias),
+    respaldos: crearServicioRespaldos(db, dependencias),
   };
 }

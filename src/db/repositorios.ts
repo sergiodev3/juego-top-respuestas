@@ -4,8 +4,11 @@ import type {
   DatosPregunta,
   DatosSet,
   Juego,
+  ModoRestauracion,
   Partida,
   Pregunta,
+  Respaldo,
+  ResumenRestauracion,
   SetPreguntas,
 } from '@/shared/modelo';
 
@@ -122,12 +125,26 @@ export interface ServicioImportacion {
   ): Promise<ResultadoImportarYJugar>;
 }
 
+/** Whole-database backup: a JSON-friendly snapshot and its restore. */
+export interface ServicioRespaldos {
+  /** Every non-deleted set, question, game and partida. */
+  exportar(): Promise<Respaldo>;
+  /**
+   * Validates the whole backup first (schemas + `erroresDeIntegridad`), then writes it in one
+   * all-or-nothing transaction. `combinar` adds missing records and lets the newer `actualizadoEn`
+   * win; `reemplazar` clears the four data tables first. Rejects with `ErrorRespaldoInvalido`
+   * (or a `ZodError`) without touching the data.
+   */
+  restaurar(respaldo: Respaldo, modo: ModoRestauracion): Promise<ResumenRestauracion>;
+}
+
 export interface Repositorios {
   sets: RepositorioSets;
   preguntas: RepositorioPreguntas;
   juegos: RepositorioJuegos;
   partidas: RepositorioPartidas;
   importacion: ServicioImportacion;
+  respaldos: ServicioRespaldos;
 }
 
 /** Injected so implementations stay deterministic under test. */
@@ -181,6 +198,17 @@ export class ErrorConfigPartida extends Error {
   constructor(errores: readonly string[]) {
     super(errores.join(' '));
     this.name = 'ErrorConfigPartida';
+    this.errores = errores;
+  }
+}
+
+/** A backup whose records are individually valid but inconsistent with each other. */
+export class ErrorRespaldoInvalido extends Error {
+  readonly errores: readonly string[];
+
+  constructor(errores: readonly string[]) {
+    super(errores.join(' '));
+    this.name = 'ErrorRespaldoInvalido';
     this.errores = errores;
   }
 }
