@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { RepositoriosProvider } from '@/db/RepositoriosProvider';
 import { RUTAS } from '@/shared/rutas';
 import { precargarRutas } from '@/test/precargarRutas';
 
@@ -37,7 +38,11 @@ describe('lazy routes', () => {
 
   it('renders a lazy view inside the app shell', async () => {
     const router = createMemoryRouter(rutas, { initialEntries: [RUTAS.respaldos] });
-    render(<RouterProvider router={router} />);
+    render(
+      <RepositoriosProvider>
+        <RouterProvider router={router} />
+      </RepositoriosProvider>,
+    );
 
     expect(await screen.findByRole('heading', { name: 'Respaldos' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Navegación principal' })).toBeInTheDocument();
