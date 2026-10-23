@@ -13,8 +13,8 @@ Branch: `feat/fase-7-respaldos` (from `main` @ `e55e95e`). Delivery: one work-un
 
 ## Tasks
 
-- [ ] T7.1 (S1, S2) Backup domain + service: `esquemaRespaldo` in `shared/modelo`, `ServicioRespaldos` (`exportar`, `restaurar(respaldo, 'combinar' | 'reemplazar')`) in `src/db`, pure `leerRespaldo(texto)` and helpers in `features/respaldos/dominio`. Route: inline, test-first.
-- [ ] T7.2 (S1, S2) `/respaldos` view: export button (downloads `top-respuestas-respaldo-YYYY-MM-DD.json`), file picker, summary preview, mode choice, confirmation for "reemplazar", result summary; remove `VistaEnConstruccion`. Route: inline, test-first.
+- [x] T7.1 (S1, S2) Backup domain + service: `esquemaRespaldo` in `shared/modelo`, `ServicioRespaldos` (`exportar`, `restaurar(respaldo, 'combinar' | 'reemplazar')`) in `src/db`, pure `leerRespaldo(texto)` and helpers in `features/respaldos/dominio`. Route: inline, test-first.
+- [x] T7.2 (S1, S2) `/respaldos` view: export button (downloads `top-respuestas-respaldo-YYYY-MM-DD.json`), file picker, summary preview, mode choice, confirmation for "reemplazar", result summary; remove `VistaEnConstruccion`. Route: inline, test-first.
 - [ ] T7.3 (S3) Offline PWA check on the production build (precache list vs `dist`, manifest, SW served from preview). Route: inline.
 - [ ] T7.4 (S4, S5) README, `npm run local` + `iniciar-top-respuestas.bat`, CLAUDE.md Fase 7 section. Route: inline.
 - [ ] T7.5 Verify (typecheck, lint, format:check, test, build), commits.

@@ -4,8 +4,8 @@ import { Link } from 'react-router';
 import { RUTAS } from '@/shared/rutas';
 import { AvisoError } from '@/shared/ui/AvisoError';
 import { CLASE_BOTON_SECUNDARIO } from '@/shared/ui/clases';
+import { descargarArchivo } from '@/shared/utils/descargarArchivo';
 
-import { descargarArchivo } from './descargarArchivo';
 import {
   ErrorLecturaArchivo,
   generarPlantillaCsv,
