@@ -5,6 +5,7 @@ import type { VistaJugadorRondaFinal, VistaRondaFinal, VistaTablero } from '@/en
 import type { Temporizador } from '@/shared/sync';
 
 import { NumeroAnimado } from './NumeroAnimado';
+import { TextoAjustado } from './TextoAjustado';
 import { DURACION_VOLTEO_S, VOLTEO } from './volteo';
 
 interface TableroRondaFinalProps {
@@ -46,7 +47,10 @@ function ColumnaJugador({ jugador }: { jugador: VistaJugadorRondaFinal }) {
             >
               {respuesta.revelada && (
                 <>
-                  <span className="flex-1 uppercase">{textoRespuesta(respuesta.texto)}</span>
+                  <TextoAjustado
+                    texto={textoRespuesta(respuesta.texto)}
+                    className="flex-1 uppercase"
+                  />
                   <span className="tabular-nums text-amber-300">{respuesta.puntos}</span>
                 </>
               )}
