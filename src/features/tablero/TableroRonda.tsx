@@ -5,6 +5,7 @@ import { cx } from '@/shared/utils/cx';
 
 import { NumeroAnimado } from './NumeroAnimado';
 import { SobreposicionTachas } from './SobreposicionTachas';
+import { TextoAjustado } from './TextoAjustado';
 import { DURACION_VOLTEO_S, VOLTEO } from './volteo';
 
 interface TableroRondaProps {
@@ -33,7 +34,7 @@ function Casilla({ respuesta }: { respuesta: VistaRespuesta }) {
       </span>
       {respuesta.revelada && (
         <>
-          <span className="flex-1 text-left uppercase">{respuesta.texto}</span>
+          <TextoAjustado texto={respuesta.texto ?? ''} className="flex-1 text-left uppercase" />
           <span className="tabular-nums text-amber-300">{respuesta.puntos}</span>
         </>
       )}
